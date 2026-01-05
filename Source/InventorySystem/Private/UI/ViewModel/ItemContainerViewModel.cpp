@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "UI/ViewModel/ItemContainerViewModel.h"
@@ -6,15 +6,13 @@
 #include "ItemContainer/ItemContainer.h"
 #include "Item/ItemDefinition.h"
 #include "InventoryManagerComponent.h"
-#include "InventoryBlueprintFunctionLibrary.h"
 #include "InventorySystem.h"
 #include "Engine/AssetManager.h"
-#include "Item/Fragment/ItemFragment_UI.h"
-#include "UI/ViewModel/ItemViewModel.h"
+#include "UI/ViewModel/ItemInstanceViewModel.h"
 
 UItemContainerViewModel::UItemContainerViewModel()
 {
-	ItemViewModelClass = UItemViewModel::StaticClass();
+	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 }
 
 void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
@@ -40,16 +38,16 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemRemoved);
 		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemChanged);
 
-		ItemViewModels.Empty(GetItemContainer()->GetItems().Num());
+		ItemInstanceViewModels.Empty(GetItemContainer()->GetItems().Num());
 		for (const FItemInstance& ItemInstance : GetItemContainer()->GetItems())
 		{
-			if (DoesItemHaveUIFragment(ItemInstance.Item))
+			if (DoesItemHaveUIFragment(ItemInstance.GetItem()))
 			{
-				UItemViewModel* NewVM = CreateItemViewModel(ItemInstance);
-				ItemViewModels.Add(NewVM);
+				UItemInstanceViewModel* NewVM = CreateItemInstanceViewModel(ItemInstance);
+				ItemInstanceViewModels.Add(NewVM);
 			}
 		}
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemViewModels);
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemInstanceViewModels);
 		UE_MVVM_SET_PROPERTY_VALUE(ItemContainerName, GetItemContainer()->GetDisplayName());
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetMaxCapacity);
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
@@ -73,40 +71,40 @@ int32 UItemContainerViewModel::GetMaxCapacity() const
 	return GetItemContainer()->GetMaxCapacity();
 }
 
-TArray<UItemViewModel*> UItemContainerViewModel::GetItemViewModels() const
+TArray<UItemInstanceViewModel*> UItemContainerViewModel::GetItemInstanceViewModels() const
 {
-	return ItemViewModels;
+	return ItemInstanceViewModels;
 }
 
 void UItemContainerViewModel::Internal_OnItemAdded(UItemContainer* InContainer, const FItemInstance& ItemInstance)
 {
-	if (DoesItemHaveUIFragment(ItemInstance.Item))
+	if (DoesItemHaveUIFragment(ItemInstance.GetItem()))
 	{
-		UItemViewModel* NewViewModel = CreateItemViewModel(ItemInstance);
-		ItemViewModels.Add(NewViewModel);
+		UItemInstanceViewModel* NewViewModel = CreateItemInstanceViewModel(ItemInstance);
+		ItemInstanceViewModels.Add(NewViewModel);
 		OnItemAdded(ItemInstance, NewViewModel);
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
 
-		ItemViewModelBuffer = NewViewModel;
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemViewModel);
-		ItemViewModelBuffer = nullptr;
+		ItemInstanceViewModelBuffer = NewViewModel;
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemInstanceViewModel);
+		ItemInstanceViewModelBuffer = nullptr;
 	}
 }
 
 void UItemContainerViewModel::Internal_OnItemRemoved(UItemContainer* InContainer, const FItemInstance& ItemInstance)
 {
-	for (int32 idx = ItemViewModels.Num() - 1; idx >= 0; idx--)
+	for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 	{
-		if (ItemViewModels[idx]->GetGuid() == ItemInstance.GetGuid())
+		if (ItemInstanceViewModels[idx]->GetGuid() == ItemInstance.GetGuid())
 		{
-			UItemViewModel* RemovedViewModel = ItemViewModels[idx];
-			ItemViewModels.RemoveAt(idx);
+			UItemInstanceViewModel* RemovedViewModel = ItemInstanceViewModels[idx];
+			ItemInstanceViewModels.RemoveAt(idx);
 			OnItemRemoved(ItemInstance, RemovedViewModel);
 			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
 
-			ItemViewModelBuffer = RemovedViewModel;
-			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetRemovedItemViewModel);
-			ItemViewModelBuffer = nullptr;
+			ItemInstanceViewModelBuffer = RemovedViewModel;
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetRemovedItemInstanceViewModel);
+			ItemInstanceViewModelBuffer = nullptr;
 			break;
 		}
 	}
@@ -114,40 +112,30 @@ void UItemContainerViewModel::Internal_OnItemRemoved(UItemContainer* InContainer
 
 void UItemContainerViewModel::Internal_OnItemChanged(UItemContainer* InContainer, const FItemInstance& ItemInstance)
 {
-	for (UItemViewModel* ItemViewModel : ItemViewModels)
+	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
 	{
-		if (ItemViewModel->GetGuid() == ItemInstance.GetGuid())
+		if (ItemInstanceViewModel->GetGuid() == ItemInstance.GetGuid())
 		{
-			ItemViewModel->SetItemInstance(ItemInstance);
-			OnItemChanged(ItemInstance, ItemViewModel);
+			ItemInstanceViewModel->SetItemInstance(ItemInstance);
+			OnItemChanged(ItemInstance, ItemInstanceViewModel);
 
-			ItemViewModelBuffer = ItemViewModel;
-			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetChangedItemViewModel);
-			ItemViewModelBuffer = nullptr;
+			ItemInstanceViewModelBuffer = ItemInstanceViewModel;
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetChangedItemInstanceViewModel);
+			ItemInstanceViewModelBuffer = nullptr;
 			break;
 		}
 	}
 }
 
-UItemViewModel* UItemContainerViewModel::CreateItemViewModel(const FItemInstance& ItemInstance)
+UItemInstanceViewModel* UItemContainerViewModel::CreateItemInstanceViewModel(const FItemInstance& ItemInstance)
 {
-	const UItemDefinition* ItemDef = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.Item);
-	const FItemFragment_UI* UIFrag = ItemDef->FindFragmentByType<FItemFragment_UI>();
-
-	TSubclassOf<UItemViewModel> ViewModelClass = ItemViewModelClass;
-	if (UIFrag && !UIFrag->ItemViewModelClass.IsNull())
+	if (ItemInstanceViewModelClass)
 	{
-		if (!UIFrag->ItemViewModelClass.Get())
-		{
-			UAssetManager::Get().LoadAssetList({
-			UIFrag->ItemViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
-		}
-		ViewModelClass = UIFrag->ItemViewModelClass.Get();
+		UItemInstanceViewModel* NewVM = NewObject<UItemInstanceViewModel>(this, ItemInstanceViewModelClass);
+		NewVM->SetItemInstance(ItemInstance);
+		return NewVM;
 	}
-
-	UItemViewModel* NewVM = NewObject<UItemViewModel>(this, ViewModelClass);
-	NewVM->SetItemInstance(ItemInstance);
-	return NewVM;
+	return nullptr;
 }
 
 bool UItemContainerViewModel::DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item)

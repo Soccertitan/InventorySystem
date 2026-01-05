@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "InventorySaveDataTypes.h"
@@ -14,14 +14,15 @@ FItemSaveData::FItemSaveData(FItemInstance& ItemInstance)
 		return;
 	}
 
-	const FItem* ItemPtr = ItemInstance.Item.GetPtr<FItem>();
+	const FItem* ItemPtr = ItemInstance.GetItem().GetPtr<FItem>();
 	Guid = ItemInstance.GetGuid();
 	ItemDefinition = ItemPtr->GetItemDefinition();
+	Quantity = ItemInstance.GetQuantity();
 
 	FMemoryWriter MemWriter(ByteData);
 	FObjectAndNameAsStringProxyArchive Ar(MemWriter, true);
 	Ar.ArIsSaveGame = true;
-	ItemInstance.Item.Serialize(Ar);
+	ItemInstance.GetItemPtr()->Serialize(Ar);
 }
 
 FItemContainerSaveData::FItemContainerSaveData(const FItemContainerInstance& ItemContainerInstance)

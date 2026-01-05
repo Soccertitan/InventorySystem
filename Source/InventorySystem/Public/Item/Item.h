@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -35,7 +35,6 @@ struct INVENTORYSYSTEM_API FItem
 	FItem();
 	virtual ~FItem(){}
 
-	int32 GetQuantity() const { return Quantity; }
 	TSoftObjectPtr<UItemDefinition> GetItemDefinition() const { return ItemDefinition; }
 
 	/** Tags representing various stats about this item, such as level, use count, remaining ammo, etc... */
@@ -62,10 +61,6 @@ protected:
 	virtual void Initialize(const UItemDefinition* InItemDefinition);
 
 private:
-
-	/** The number of instances of this item. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = true, ClampMin=1), SaveGame)
-	int32 Quantity;
 
 	/** The static data representing this item. */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true), SaveGame)

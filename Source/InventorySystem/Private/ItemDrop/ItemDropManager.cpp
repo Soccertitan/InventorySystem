@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "ItemDrop/ItemDropManager.h"
@@ -31,14 +31,14 @@ void AItemDropManager::BeginPlay()
 	}
 }
 
-AItemDrop* AItemDropManager::TryCreateItemDrop(const TInstancedStruct<FItem>& Item, const FItemDropParams& Params)
+AItemDrop* AItemDropManager::TryCreateItemDrop(const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params)
 {
 	if (!HasAuthority() || !Params.IsValid())
 	{
 		return nullptr;
 	}
 
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByGuid(Item, UInventorySettings::GetDefaultItemContainerTag());
+	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByTag(Item, Quantity, UInventorySettings::GetDefaultItemContainerTag());
 	if (Result.ItemGuids.IsEmpty())
 	{
 		return nullptr;
@@ -55,14 +55,14 @@ AItemDrop* AItemDropManager::TryCreateItemDropFromItemInstance(const FItemInstan
 		return nullptr;
 	}
 
-	TInstancedStruct<FItem> Item = ItemInstance.GetItemContainer()->GetInventoryManagerComponent()->
+	int32 Quantity = ItemInstance.GetItemContainer()->GetInventoryManagerComponent()->
 		ConsumeItemByGuid(ItemInstance.GetGuid(), QuantityToDrop);
-	if (!Item.IsValid())
+	if (Quantity <= 0)
 	{
 		return nullptr;
 	}
 
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByGuid(Item, UInventorySettings::GetDefaultItemContainerTag());
+	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByTag(ItemInstance.GetItem(), Quantity, UInventorySettings::GetDefaultItemContainerTag());
 	if (Result.ItemGuids.IsEmpty())
 	{
 		return nullptr;

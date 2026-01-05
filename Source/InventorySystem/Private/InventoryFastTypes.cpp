@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "InventoryFastTypes.h"
@@ -35,6 +35,11 @@ bool FItemInstance::IsValid() const
 	{
 		return false;
 	}
+	
+	if (Quantity <= 0)
+	{
+		return false;
+	}
 
 	if (!WeakItemContainer.Get())
 	{
@@ -63,11 +68,31 @@ void FItemInstance::PreReplicatedRemove(const FItemInstanceContainer& InSerializ
 	InSerializer.Owner->Internal_OnItemRemoved(*this);
 }
 
+const TInstancedStruct<FItem>& FItemInstance::GetItem() const
+{
+	return Item;
+}
+
+TInstancedStruct<FItem>* FItemInstance::GetItemPtr()
+{
+	return &Item;
+}
+
+const TInstancedStruct<FItem>& FItemInstance::GetPreReplicatedItem() const
+{
+	return PreReplicatedChangeItem;
+}
+
+int32 FItemInstance::GetQuantity() const
+{
+	return Quantity;
+}
+
 //----------------------------------------------------------------------------------------
 // ItemInstanceContainer
 //----------------------------------------------------------------------------------------
 
-void FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<FItem> Item)
+void FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity)
 {
 	check(Guid.IsValid());
 	check(Item.IsValid() && !Item.Get().GetItemDefinition().IsNull());
@@ -76,6 +101,7 @@ void FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<F
 	NewItem.Guid = Guid;
 	NewItem.Item = Item;
 	NewItem.PreReplicatedChangeItem = Item;
+	NewItem.Quantity = Quantity;
 	NewItem.WeakItemContainer = Owner;
 
 	Owner->Internal_OnItemAdded(NewItem);

@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -30,6 +30,10 @@ struct INVENTORYSYSTEM_API FItemSaveData
 	/** The item definition to check if it's valid before restoring the item. */
 	UPROPERTY(BlueprintReadOnly)
 	TSoftObjectPtr<UItemDefinition> ItemDefinition;
+	
+	/** The quantity of the item. */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Quantity = 1;
 
 	/** The item's serialized SaveGame properties. */
 	UPROPERTY()

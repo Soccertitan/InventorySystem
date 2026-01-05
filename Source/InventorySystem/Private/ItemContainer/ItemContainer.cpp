@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "ItemContainer/ItemContainer.h"
@@ -234,8 +234,7 @@ bool UItemContainer::CanAddItem(const TInstancedStruct<FItem>& Item, FGameplayTa
 		return false;
 	}
 
-	if (Item.Get().GetQuantity() <= 0 ||
-		Item.GetPtr<FItem>()->GetItemDefinition().IsNull())
+	if (Item.GetPtr<FItem>()->GetItemDefinition().IsNull())
 	{
 		OutError = FInventoryGameplayTags::Get().ItemAddResult_Error_InvalidItem;
 		return false;
@@ -270,21 +269,19 @@ bool UItemContainer::CanRemoveItem(const TInstancedStruct<FItem>& Item) const
 	return true;
 }
 
-bool UItemContainer::CanSplitItemStack(const TInstancedStruct<FItem>& Item, const int32 Quantity) const
+bool UItemContainer::CanSplitItemStack(const FItemInstance& ItemInstance, const int32 Quantity) const
 {
-	if (!Item.IsValid() || Quantity <= 0)
+	if (!ItemInstance.IsValid())
 	{
 		return false;
 	}
 
-	const FItem* ItemPtr = Item.GetPtr<FItem>();
-
-	if (ItemPtr->GetQuantity() <= 1)
+	if (ItemInstance.GetQuantity() <= 1)
 	{
 		return false;
 	}
 
-	if (Quantity >= ItemPtr->GetQuantity())
+	if (Quantity >= ItemInstance.GetQuantity())
 	{
 		return false;
 	}
@@ -294,7 +291,7 @@ bool UItemContainer::CanSplitItemStack(const TInstancedStruct<FItem>& Item, cons
 		return false;
 	}
 
-	if (IsItemAtStackQuantityLimit(Item))
+	if (IsItemAtStackQuantityLimit(ItemInstance.GetItem()))
 	{
 		return false;
 	}
@@ -302,33 +299,30 @@ bool UItemContainer::CanSplitItemStack(const TInstancedStruct<FItem>& Item, cons
 	return true;
 }
 
-bool UItemContainer::CanStackItems(const TInstancedStruct<FItem>& TargetItem,
-	const TInstancedStruct<FItem>& SourceItem, const int32 QuantityToStack, int32& OutQuantity) const
+bool UItemContainer::CanStackItems(const FItemInstance& TargetItemInstance,
+	const FItemInstance& SourceItemInstance, const int32 QuantityToStack, int32& OutQuantity) const
 {
 	OutQuantity = 0;
 
-	if (!SourceItem.IsValid() || !TargetItem.IsValid() || QuantityToStack <= 0)
+	if (!SourceItemInstance.IsValid() || !TargetItemInstance.IsValid() || QuantityToStack <= 0)
 	{
 		return false;
 	}
 
-	if (!TargetItem.Get().IsMatching(SourceItem))
+	if (!TargetItemInstance.GetItem().Get().IsMatching(SourceItemInstance.GetItem()))
 	{
 		return false;
 	}
 
-	const int32 TargetItemMaxQuantity = GetItemQuantityLimit(TargetItem);
+	const int32 TargetItemMaxQuantity = GetItemQuantityLimit(TargetItemInstance.GetItem());
 	if (TargetItemMaxQuantity <= 1)
 	{
 		return false;
 	}
 
-	const FItem* SourceItemPtr = SourceItem.GetPtr<FItem>();
-	const FItem* TargetItemPtr = TargetItem.GetPtr<FItem>();
-
-	const int32 TargetItemAvailableSpace = TargetItemMaxQuantity - TargetItemPtr->GetQuantity();
+	const int32 TargetItemAvailableSpace = TargetItemMaxQuantity - TargetItemInstance.GetQuantity();
 	OutQuantity = FMath::Min(TargetItemAvailableSpace, QuantityToStack);
-	OutQuantity = FMath::Min(OutQuantity, SourceItemPtr->GetQuantity());
+	OutQuantity = FMath::Min(OutQuantity, SourceItemInstance.GetQuantity());
 	return OutQuantity > 0;
 }
 
@@ -343,7 +337,7 @@ int32 UItemContainer::GetTotalItemQuantity(const TInstancedStruct<FItem>& Item) 
 
 	for (const FItemInstance* Entry : FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)))
 	{
-		Result = Result + Entry->Item.GetPtr<FItem>()->GetQuantity();
+		Result = Result + Entry->GetQuantity();
 	}
 	
 	return Result;
@@ -439,7 +433,12 @@ void UItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddIte
 	//----------------------------------------------------------------------------------------------
 	const int32 ItemQuantityLimit = GetItemQuantityLimit(Item);
 	const int32 RemainingItemStackCapacity = GetRemainingItemStackCapacity(Item);
-	const int32 MaxItemQuantityToAdd = ItemQuantityLimit * RemainingItemStackCapacity - GetTotalItemQuantity(Item);
+	int32 MaxItemQuantityToAdd = MAX_int32;
+	if (!FMath::MultiplyAndCheckForOverflow(ItemQuantityLimit, RemainingItemStackCapacity, MaxItemQuantityToAdd))
+	{
+		MaxItemQuantityToAdd = MAX_int32;
+	}
+	MaxItemQuantityToAdd -= GetTotalItemQuantity(Item);
 	int32 RemainingQuantityToAdd = FMath::Min(MaxItemQuantityToAdd, AddItemPlan.GetAmountToGive());
 
 	//----------------------------------------------------------------------------------------------
@@ -462,10 +461,9 @@ void UItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddIte
 			break;
 		}
 
-		FItem* ItemPtr = Match->Item.GetMutablePtr<FItem>();
-		if (ItemPtr->GetQuantity() < ItemQuantityLimit)
+		if (Match->GetQuantity() < ItemQuantityLimit)
 		{
-			const int32 QuantityToAdd = FMath::Min(RemainingQuantityToAdd, ItemQuantityLimit - ItemPtr->GetQuantity());
+			const int32 QuantityToAdd = FMath::Min(RemainingQuantityToAdd, ItemQuantityLimit - Match->GetQuantity());
 			RemainingQuantityToAdd = RemainingQuantityToAdd - QuantityToAdd;
 			AddItemPlan.AddEntry(FAddItemPlanEntry(Match, QuantityToAdd));
 		}

@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "UI/ViewModel/ItemViewModel.h"
@@ -8,7 +8,6 @@
 #include "InventorySystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
-#include "ItemContainer/ItemContainer.h"
 #include "Item/Fragment/ItemFragment_UI.h"
 #include "UI/ItemViewModelInterface.h"
 
@@ -17,26 +16,30 @@ UItemViewModel::UItemViewModel()
 	Bundles.Add("UI");
 }
 
-void UItemViewModel::SetItemInstance(const FItemInstance& ItemInstance)
+void UItemViewModel::SetItem(const TInstancedStruct<FItem>& InItem)
 {
-	if (ItemInstance.IsValid())
+	if (InItem.IsValid())
 	{
-		UE_MVVM_SET_PROPERTY_VALUE(bItemValid, true);
-
 		bool bShouldLoadItemDefinition = false;
-		if (Guid != ItemInstance.GetGuid())
+		
+		if (CachedItem.IsValid())
 		{
-			ItemDefinitionStreamableHandle.Reset();
+			if (InItem.Get().GetItemDefinition() != CachedItem.Get().GetItemDefinition())
+			{
+				ItemDefinitionStreamableHandle.Reset();
+				bShouldLoadItemDefinition = true;
+			}
+		}
+		else
+		{
 			bShouldLoadItemDefinition = true;
 		}
-
-		Guid = ItemInstance.GetGuid();
-		Item = ItemInstance.Item;
-		ItemContainer = ItemInstance.GetItemContainer();
-		InventoryManagerComponent = ItemContainer->GetInventoryManagerComponent();
-		OnItemSet(ItemInstance);
-		K2_OnItemSet(ItemInstance);
-
+		
+		CachedItem = InItem;
+		
+		OnItemSet(CachedItem);
+		K2_OnItemSet(CachedItem);
+		
 		if (bShouldLoadItemDefinition && bAutoLoadItemDefinition)
 		{
 			LoadItemDefinition();
@@ -45,7 +48,6 @@ void UItemViewModel::SetItemInstance(const FItemInstance& ItemInstance)
 	else
 	{
 		ItemDefinitionStreamableHandle.Reset();
-		UE_MVVM_SET_PROPERTY_VALUE(bItemValid, false);
 	}
 }
 
@@ -78,7 +80,7 @@ UUserWidget* UItemViewModel::CreateItemDetailsWidget(APlayerController* OwningPl
 
 void UItemViewModel::LoadItemDefinition()
 {
-	if (const FItem* ItemPtr = Item.GetPtr<FItem>())
+	if (const FItem* ItemPtr = CachedItem.GetPtr<FItem>())
 	{
 		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(
 		   ItemPtr->GetItemDefinition().ToSoftObjectPath());
@@ -89,25 +91,8 @@ void UItemViewModel::LoadItemDefinition()
 				&UItemViewModel::Internal_OnItemDefinitionLoaded, ItemPtr->GetItemDefinition());
 			ItemDefinitionStreamableHandle = UAssetManager::Get().PreloadPrimaryAssets(
 			   {AssetId}, Bundles, bLoadRecursive, Delegate);
-		
-			UE_MVVM_SET_PROPERTY_VALUE(bItemDefinitionLoading, ItemDefinitionStreamableHandle->IsLoadingInProgress());
 		}
 	}
-}
-
-void UItemViewModel::OnItemSet(const FItemInstance& ItemInstance)
-{
-	const FItem* ItemPtr = ItemInstance.Item.GetPtr<FItem>();
-	SetQuantity(ItemPtr->GetQuantity());
-}
-
-void UItemViewModel::OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition)
-{
-	const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>();
-	SetItemName(UIFrag->ItemName);
-	SetDescription(UIFrag->Description);
-	SetIcon(UIFrag->Icon.Get());
-	SetMaxQuantity(GetItemContainer()->GetItemQuantityLimit(GetItem()));
 }
 
 void UItemViewModel::SetItemName(FText InValue)
@@ -125,24 +110,18 @@ void UItemViewModel::SetIcon(UTexture2D* InValue)
 	UE_MVVM_SET_PROPERTY_VALUE(Icon, InValue);
 }
 
-void UItemViewModel::SetQuantity(int32 InValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(Quantity, InValue);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsAtMaxQuantity);
-}
-
-void UItemViewModel::SetMaxQuantity(int32 InValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(MaxQuantity, InValue);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsAtMaxQuantity);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(CanHaveMaxQuantityGreaterThanOne);
-}
-
 void UItemViewModel::Internal_OnItemDefinitionLoaded(TSoftObjectPtr<UItemDefinition> ItemDefinition)
 {
-	UE_MVVM_SET_PROPERTY_VALUE(bItemDefinitionLoading, false);
-	ItemWidgetClass = ItemDefinition.Get()->FindFragmentByType<FItemFragment_UI>()->WidgetClass;
+	const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>();
+	ItemWidgetClass = UIFrag->WidgetClass;
+	SetItemName(UIFrag->ItemName);
+	SetDescription(UIFrag->Description);
+	SetIcon(UIFrag->Icon.Get());
+
 	OnItemDefinitionLoaded(ItemDefinition.Get());
 	K2_OnItemDefinitionLoaded(ItemDefinition.Get());
+	
+	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(OnViewModelInitialized);
+
 	ItemDefinitionStreamableHandle.Reset();
 }

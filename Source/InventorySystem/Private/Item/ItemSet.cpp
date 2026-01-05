@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "Item/ItemSet.h"
@@ -10,6 +10,11 @@
 const TInstancedStruct<FItem>& FItemSetInstance::GetItem() const
 {
 	return Item;
+}
+
+int32 FItemSetInstance::GetQuantity() const
+{
+	return Quantity;
 }
 
 void FItemSetInstance::TryCreateItem()

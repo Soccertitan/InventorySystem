@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "ItemDrop/ItemDropItemContainer.h"
@@ -14,6 +14,5 @@ int32 UItemDropItemContainer::GetItemStackQuantityLimit(const TInstancedStruct<F
 
 void UItemDropItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddItemPlan& AddItemPlan) const
 {
-	const FItem* ItemPtr = Item.GetPtr<FItem>();
-	AddItemPlan.AddEntry(FAddItemPlanEntry(Item, ItemPtr->GetQuantity()));
+	AddItemPlan.AddEntry(FAddItemPlanEntry(Item, AddItemPlan.GetAmountToGive()));
 }

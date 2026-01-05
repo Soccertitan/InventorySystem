@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "ItemDrop/ItemDrop.h"
@@ -41,10 +41,10 @@ void AItemDrop::TryTakeItem(UInventoryManagerComponent* InventoryManagerComponen
 		return;
 	}
 
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItem(
-		ItemDropManager->InventoryManagerComponent->K2_FindItemByGuid(ItemGuid).Item, Container);
+	FItemInstance ItemInstance = ItemDropManager->InventoryManagerComponent->K2_FindItemByGuid(ItemGuid);
+	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItem(ItemInstance.GetItem(), ItemInstance.GetQuantity(), Container);
 
-	TInstancedStruct<FItem> ConsumedItem = ItemDropManager->InventoryManagerComponent->ConsumeItemByGuid(ItemGuid, Result.AmountGiven);
+	ItemDropManager->InventoryManagerComponent->ConsumeItemByGuid(ItemGuid, Result.AmountGiven);
 }
 
 bool AItemDrop::CanTakeItem(UInventoryManagerComponent* InventoryManagerComponent) const

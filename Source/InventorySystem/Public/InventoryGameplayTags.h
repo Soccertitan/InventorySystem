@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -31,6 +31,7 @@ public:
 	 * Add Item Plan Errors
 	 */
 	FGameplayTag ItemAddResult_Error_InvalidItem;
+	FGameplayTag ItemAddResult_Error_InvalidQuantity;
 	FGameplayTag ItemAddResult_Error_ContainerNotFound;
 	FGameplayTag ItemAddResult_Error_CantContainItem;
 	FGameplayTag ItemAddResult_Error_MaxStacksReached;

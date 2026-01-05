@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -40,5 +40,5 @@ private:
 	UPROPERTY(Transient)
 	TArray<TWeakObjectPtr<UItemContainerViewModel>> InventoryContainerViewModels;
 
-	UItemContainerViewModel* Internal_CreateContainerViewModel(UItemContainer* Container);
+	UItemContainerViewModel* Internal_CreateItemContainerViewModel(UItemContainer* Container);
 };

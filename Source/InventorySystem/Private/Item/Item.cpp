@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "Item/Item.h"
@@ -8,7 +8,6 @@
 
 FItem::FItem()
 {
-	Quantity = 0;
 }
 
 bool FItem::IsMatching(const TInstancedStruct<FItem>& Item) const
@@ -45,9 +44,9 @@ bool FItem::AreShardsEqual(const TInstancedStruct<FItem>& Item) const
 		return false;
 	}
 
-	for (int32 idx = 0; idx < Shards.Num(); idx++)
+	for (int32 Index = 0; Index < Shards.Num(); Index++)
 	{
-		if (!Shards[idx].Get<FItemShard>().IsMatching(TestItemPtr->Shards[idx]))
+		if (!Shards[Index].Get<FItemShard>().IsMatching(TestItemPtr->Shards[Index]))
 		{
 			return false;
 		}
@@ -58,11 +57,11 @@ bool FItem::AreShardsEqual(const TInstancedStruct<FItem>& Item) const
 
 TInstancedStruct<FItemShard> FItem::FindShardByScriptStruct(const UScriptStruct* Struct) const
 {
-	for (const TInstancedStruct<FItemShard>& Fragment : Shards)
+	for (const TInstancedStruct<FItemShard>& Shard : Shards)
 	{
-		if (Fragment.IsValid() && Fragment.GetScriptStruct()->IsChildOf(Struct))
+		if (Shard.IsValid() && Shard.GetScriptStruct()->IsChildOf(Struct))
 		{
-			return Fragment;
+			return Shard;
 		}
 	}
 	return TInstancedStruct<FItemShard>();
@@ -70,9 +69,9 @@ TInstancedStruct<FItemShard> FItem::FindShardByScriptStruct(const UScriptStruct*
 
 void FItem::Initialize(const UItemDefinition* InItemDefinition)
 {
-	ItemDefinition = ItemDefinition->GetPathName();
+	ItemDefinition = InItemDefinition->GetPathName();
 
-	for (const TTuple<FGameplayTag, int>& Pair : ItemDefinition->DefaultStats)
+	for (const TTuple<FGameplayTag, int>& Pair : InItemDefinition->DefaultStats)
 	{
 		GameplayTagStackContainer.AddStack(Pair.Key, Pair.Value);
 	}

@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -6,6 +6,7 @@
 #include "Item/Item.h"
 #include "MVVMViewModelBase.h"
 #include "Engine/StreamableManager.h"
+#include "Types/MVVMEventField.h"
 #include "ItemViewModel.generated.h"
 
 
@@ -20,31 +21,18 @@ class INVENTORYSYSTEM_API UItemViewModel : public UMVVMViewModelBase
 
 public:
 	UItemViewModel();
-
-	/** Initializes the ViewModel with the specified ItemInstance. */
-	void SetItemInstance(const FItemInstance& ItemInstance);
+	
+	void SetItem(const TInstancedStruct<FItem>& InItem);
+	
+	UFUNCTION(BlueprintPure, FieldNotify)
+	FMVVMEventField OnViewModelInitialized() const { return{}; }
 
 	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
-	FGuid GetGuid() const { return Guid; }
-	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
-	const TInstancedStruct<FItem>& GetItem() const { return Item; }
+	const TInstancedStruct<FItem>& GetItem() const { return CachedItem; }
 
 	FText GetItemName() const {return ItemName;}
 	FText GetDescription() const {return Description;}
 	UTexture2D* GetIcon() const {return Icon;}
-	int32 GetQuantity() const {return Quantity;}
-	int32 GetMaxQuantity() const {return MaxQuantity;}
-
-	UFUNCTION(BlueprintPure, FieldNotify)
-	bool CanHaveMaxQuantityGreaterThanOne() const {return MaxQuantity > 1;}
-	UFUNCTION(BlueprintPure, FieldNotify)
-	bool IsAtMaxQuantity() const {return GetQuantity() >= GetMaxQuantity();}
-	
-	bool GetIsItemDefinitionLoading() const { return bItemDefinitionLoading; }
-	bool GetIsItemValid() const { return bItemValid; }
-
-	UInventoryManagerComponent* GetInventoryManagerComponent() const { return InventoryManagerComponent; }
-	UItemContainer* GetItemContainer() const { return ItemContainer; }
 
 	/**
 	 * Creates a Widget and initializes it with this ViewModel. If the passed in Widget class is null, the function
@@ -74,14 +62,14 @@ protected:
 	bool bLoadRecursive = true;
 
 	/** Called from SetItem when a valid Item has been set. */
-	virtual void OnItemSet(const FItemInstance& ItemInstance);
+	virtual void OnItemSet(const TInstancedStruct<FItem>& Item){}
 
 	/** Called from SetItem when a valid Item has been set. */
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemSet")
-	void K2_OnItemSet(const FItemInstance& ItemInstance);
+	void K2_OnItemSet(const TInstancedStruct<FItem>& Item);
 
 	/** Called when the ItemDefinition is loaded. */
-	virtual void OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition);
+	virtual void OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition){}
 
 	/** Called when the ItemDefinition is loaded. */
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemDefinitionLoaded")
@@ -90,25 +78,16 @@ protected:
 	void SetItemName(FText InValue);
 	void SetDescription(FText InValue);
 	void SetIcon(UTexture2D* InValue);
-	void SetQuantity(int32 InValue);
-	void SetMaxQuantity(int32 InValue);
 
 private:
-	/** Cached identifier of the ItemInstance. */
-	UPROPERTY()
-	FGuid Guid;
+
 	/** Cached copy of the Item. */
 	UPROPERTY()
-	TInstancedStruct<FItem> Item;
-	/** Cached widget to spawn for the ItemDetailsWidget. */
+	TInstancedStruct<FItem> CachedItem;
+
+	/** Cached widget class to spawn for the ItemDetailsWidget. */
 	UPROPERTY()
 	TSoftClassPtr<UUserWidget> ItemWidgetClass;
-	/** The owner where the item originated from. */
-	UPROPERTY()
-	TObjectPtr<UInventoryManagerComponent> InventoryManagerComponent;
-	/** The ItemContainer the item is 'stored' in. */
-	UPROPERTY()
-	TObjectPtr<UItemContainer> ItemContainer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, Setter, meta = (AllowPrivateAccess = "true"))
 	FText ItemName;
@@ -118,17 +97,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, Setter, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTexture2D> Icon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
-	int32 Quantity = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
-	int32 MaxQuantity = 0;
-
-	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter = GetIsItemValid, meta = (AllowPrivateAccess = "true"))
-	bool bItemValid = false;
-	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter = GetIsItemDefinitionLoading, meta = (AllowPrivateAccess = "true"))
-	bool bItemDefinitionLoading = false;
 
 	/** Cached handle for the ItemDefinition. */
 	TSharedPtr<FStreamableHandle> ItemDefinitionStreamableHandle;

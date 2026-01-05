@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -7,15 +7,15 @@
 #include "StructUtils/InstancedStruct.h"
 #include "ItemContainerViewModel.generated.h"
 
+struct FItem;
 class UInventoryManagerComponent;
-class UItemViewModel;
+class UItemInstanceViewModel;
 class UItemContainer;
 struct FItemInstance;
-struct FItem;
 
 /**
  * A generic implementation of the ItemContainer ViewModel designed to be subclassed. It will add and remove items to the
- * ItemViewModels array as needed. And supply changes to the ItemViewModels as needed.
+ * ItemInstanceViewModels array as needed. And supply changes to the ItemInstanceViewModels as needed.
  */
 UCLASS()
 class INVENTORYSYSTEM_API UItemContainerViewModel : public UMVVMViewModelBase
@@ -41,42 +41,41 @@ public:
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
 	int32 GetMaxCapacity() const;
 
-	/** Called only once when the ItemViewModels are first created in SetItemContainer. */
+	/** Called only once when the ItemInstanceViewModels are first created in SetItemContainer. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
-	TArray<UItemViewModel*> GetItemViewModels() const;
+	TArray<UItemInstanceViewModel*> GetItemInstanceViewModels() const;
 
-	/** Called whenever an ItemViewModel is added to the ItemViewModels after initial setup. */
+	/** Called whenever an ItemInstanceViewModel is added to the ItemInstanceViewModels after initial setup. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
-	UItemViewModel* GetAddedItemViewModel() const {return ItemViewModelBuffer;}
+	UItemInstanceViewModel* GetAddedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
-	/** Called whenever an ItemViewModel is removed to the ItemViewModels. */
+	/** Called whenever an ItemInstanceViewModel is removed to the ItemInstanceViewModels. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
-	UItemViewModel* GetRemovedItemViewModel() const {return ItemViewModelBuffer;}
+	UItemInstanceViewModel* GetRemovedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
-	/** Called whenever an ItemViewModel is changed in the ItemViewModels. */
+	/** Called whenever an ItemInstanceViewModel is changed in the ItemInstanceViewModels. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
-	UItemViewModel* GetChangedItemViewModel() const {return ItemViewModelBuffer;}
+	UItemInstanceViewModel* GetChangedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 protected:
-	/** The ItemViewModelClass to create for an item if the Item's ItemViewModelClass is null. */
+	/** The ItemInstanceViewModelClass to create. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, NoClear, Category = "Item Container View Model")
-	TSubclassOf<UItemViewModel> ItemViewModelClass;
+	TSubclassOf<UItemInstanceViewModel> ItemInstanceViewModelClass;
 
 	/** Called when a valid ItemContainer is set. */
 	virtual void OnItemContainerSet() {}
 
 	/** Called whenever an item is added to the ItemContainer. */
-	virtual void OnItemAdded(const FItemInstance& ItemInstance, UItemViewModel* ItemViewModel) {}
+	virtual void OnItemAdded(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is removed from the ItemContainer. */
-	virtual void OnItemRemoved(const FItemInstance& ItemInstance, UItemViewModel* ItemViewModel) {}
+	virtual void OnItemRemoved(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is changed in the ItemContainer. */
-	virtual void OnItemChanged(const FItemInstance& ItemInstance, UItemViewModel* ItemViewModel) {}
+	virtual void OnItemChanged(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
 
 	/**
-	 * Creates an ItemViewModel based on the Item's ItemFragment_UI. If it is invalid, falls back to the 
-	 * ItemViewModelClass defined in this class.
+	 * Creates an ItemInstanceViewModel using the ItemInstanceViewModelClass.
 	 */
-	UItemViewModel* CreateItemViewModel(const FItemInstance& ItemInstance);
+	UItemInstanceViewModel* CreateItemInstanceViewModel(const FItemInstance& ItemInstance);
 
 	static bool DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item);
 
@@ -84,13 +83,13 @@ private:
 	UPROPERTY()
 	TWeakObjectPtr<UItemContainer> WeakItemContainer;
 
-	/** The created ItemViewModels. */
+	/** The created ItemInstanceViewModels. */
 	UPROPERTY()
-	TArray<TObjectPtr<UItemViewModel>> ItemViewModels;
+	TArray<TObjectPtr<UItemInstanceViewModel>> ItemInstanceViewModels;
 
 	/** Temporarily updated as items are added, removed, and changed. */
 	UPROPERTY()
-	TObjectPtr<UItemViewModel> ItemViewModelBuffer;
+	TObjectPtr<UItemInstanceViewModel> ItemInstanceViewModelBuffer;
 
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
 	FText ItemContainerName;

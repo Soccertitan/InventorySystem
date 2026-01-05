@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -35,11 +35,12 @@ public:
 	/**
 	 * Takes the passed in Item and tries to represent it in the world.
 	 * @param Item The item to represent in the world.
+	 * @param Quantity The amount of the item.
 	 * @param Params Defines the parameters for spawning the ItemDropActor.
 	 * @return The newly created ItemDropActor.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Item Drop Manager")
-	AItemDrop* TryCreateItemDrop(UPARAM(ref) const TInstancedStruct<FItem>& Item, const FItemDropParams& Params);
+	AItemDrop* TryCreateItemDrop(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params);
 
 	/**
 	 * Takes the ItemInstance and consumes the specified QuantityToDrop.

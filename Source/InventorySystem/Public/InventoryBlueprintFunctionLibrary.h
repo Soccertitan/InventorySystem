@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -30,7 +30,7 @@ public:
 	static UInventoryManagerComponent* GetInventoryManagerComponent(const AActor* Actor);
 
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
-	static int32 GetItemQuantity(UPARAM(ref) const TInstancedStruct<FItem>& Item);
+	static bool IsItemInstanceValid(UPARAM(ref) const FItemInstance& ItemInstance);
 
 	/**
 	 * Synchronously loads the ItemDefinition from the Item. Does not flush any current AsyncLoads.
@@ -49,7 +49,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Shard")
 	static TInstancedStruct<FItemShard> K2_FindItemShard(
 		UPARAM(ref) const TInstancedStruct<FItem>& Item,
-		UPARAM(meta = (MetaStruct="Script/InventorySystem.ItemShard")) const UScriptStruct* FragmentType);
+		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemShard")) const UScriptStruct* FragmentType);
 
 	/**
 	 * Iterates through an ItemDefinition's Fragments and finds the one that is a child of FragmentType.
@@ -60,5 +60,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Fragment")
 	static TInstancedStruct<FItemFragment> K2_FindItemFragment(
 		const UItemDefinition* ItemDefinition,
-		UPARAM(meta = (MetaStruct="Script/InventorySystem.ItemFragment")) const UScriptStruct* FragmentType);
+		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemFragment")) const UScriptStruct* FragmentType);
 };

@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -31,6 +31,7 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	FGuid GetGuid() const { return Guid; }
 	UInventoryManagerComponent* GetInventoryManagerComponent() const;
 	UItemContainer* GetItemContainer() const { return WeakItemContainer.Get(); }
+	UItemContainer* GetMovedToItemContainer() const { return WeakMovedToItemContainer.Get(); }
 	bool IsValid() const;
 
 	//~ Begin of FFastArraySerializerItem
@@ -39,12 +40,13 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	void PreReplicatedRemove(const FItemInstanceContainer& InSerializer);
 	//~ End of FFastArraySerializerItem
 
-	/* The replicated Item. */
-	UPROPERTY(BlueprintReadOnly)
-	TInstancedStruct<FItem> Item;
-
+	/** A const reference of the Item. */
+	const TInstancedStruct<FItem>& GetItem() const;
+	/** A pointer to the Item. */
+	TInstancedStruct<FItem>* GetItemPtr();
 	/** Holds the previous value of the item during a broadcast event. */
-	TInstancedStruct<FItem> GetPreReplicatedItem() const { return PreReplicatedChangeItem; }
+	const TInstancedStruct<FItem>& GetPreReplicatedItem() const;
+	int32 GetQuantity() const;
 
 private:
 
@@ -52,15 +54,28 @@ private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
 	FGuid Guid;
 
+	/* The replicated Item. */
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
+	TInstancedStruct<FItem> Item;
+	
+	/** The number of item instances. */
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
+	int32 Quantity = 0;
+
 	/** The ItemContainer that holds this item. */
 	UPROPERTY(NotReplicated)
 	TWeakObjectPtr<UItemContainer> WeakItemContainer;
+
+	/** The ItemContainer the Item was moved into. Only valid on Server when the ItemInstance is removed from this ItemContainer. */
+	UPROPERTY(NotReplicated)
+	TWeakObjectPtr<UItemContainer> WeakMovedToItemContainer;
 
 	/* A copy of the Item which we use as a lookup for the previous values of changed properties. */
 	UPROPERTY(NotReplicated, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TInstancedStruct<FItem> PreReplicatedChangeItem;
 
 	friend UItemContainer;
+	friend UInventoryManagerComponent;
 	friend struct FItemInstanceContainer;
 };
 
@@ -80,7 +95,7 @@ struct INVENTORYSYSTEM_API FItemInstanceContainer : public FFastArraySerializer
     }
 
     /** Adds an Item to the list. */
-    void AddItem(const FGuid& Guid, const TInstancedStruct<FItem> Item);
+    void AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity);
 
     /** Removes an Item from the list. */
     void RemoveItem(const FGuid& Guid);

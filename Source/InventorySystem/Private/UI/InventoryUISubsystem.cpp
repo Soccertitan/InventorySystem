@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "UI/InventoryUISubsystem.h"
@@ -27,7 +27,7 @@ UItemContainerViewModel* UInventoryUISubsystem::CreateItemContainerViewModel(UIt
 		}
 	}
 
-	return CreateItemContainerViewModel(ItemContainer);
+	return Internal_CreateItemContainerViewModel(ItemContainer);
 }
 
 UItemContainerViewModel* UInventoryUISubsystem::CreateItemContainerViewModelForActor(AActor* Actor, FGameplayTag ItemContainerTag)
@@ -52,7 +52,7 @@ UItemContainer* UInventoryUISubsystem::GetItemContainerFromProvider(TSubclassOf<
 	return nullptr;
 }
 
-UItemContainerViewModel* UInventoryUISubsystem::Internal_CreateContainerViewModel(UItemContainer* Container)
+UItemContainerViewModel* UInventoryUISubsystem::Internal_CreateItemContainerViewModel(UItemContainer* Container)
 {
 	if (!Container->GetViewModelClass().Get())
 	{

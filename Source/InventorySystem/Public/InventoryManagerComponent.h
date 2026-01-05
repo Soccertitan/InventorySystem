@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -113,38 +113,30 @@ public:
 	/**
 	 * Creates a new item instance and initializes it with the ItemDefinition.
 	 * @param ItemDefinition The ItemDefinition to associate with the item.
-	 * @param Quantity The number of items in the stack with a minimum set to 1.
 	 * @return The newly created item.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory System|Inventory Manager")
-	static TInstancedStruct<FItem> CreateItem(const UItemDefinition* ItemDefinition, const int32 Quantity = 1);
-
-	/**
-	 * Duplicates the item and assigns a new quantity to it.
-	 * @param Item The item to duplicate.
-	 * @param Quantity The number of items in the stack with a minimum set to 1.
-	 * @return An exact copy of the item with a new quantity.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|Inventory Manager")
-	static TInstancedStruct<FItem> DuplicateItem(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity = 1);
+	static TInstancedStruct<FItem> CreateItem(const UItemDefinition* ItemDefinition);
 
 	/**
 	 * Tries to add a new item that will be managed by this ItemManager.
 	 * @param Item The item to add.
 	 * @param ItemContainer The container to add the item to.
+	 * @param Quantity The quantity of the item to add.
 	 * @return The actual amount of the item that was added and any errors if the item could not be added in full.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	FAddItemPlanResult TryAddItem(UPARAM(ref) const TInstancedStruct<FItem>& Item, UItemContainer* ItemContainer);
+	FAddItemPlanResult TryAddItem(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
 
 	/**
 	 * Tries to add a new item that will be managed by this ItemManager.
 	 * @param Item The item to add.
 	 * @param ItemContainerTag The container to add the item to.
+	 * @param Quantity The quantity of the item to add.
 	 * @return The actual amount of the item that was added and any errors if the item could not be added in full.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	FAddItemPlanResult TryAddItemByGuid(UPARAM(ref) const TInstancedStruct<FItem>& Item,
+	FAddItemPlanResult TryAddItemByTag(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity,
 		UPARAM(meta = (Categories = "ItemContainer")) const FGameplayTag ItemContainerTag);
 
 	/**
@@ -166,27 +158,28 @@ public:
 	 * Consumes the specified quantity of the item. If the quantity reaches 0, the item is removed from the ItemManager.
 	 * @param ItemInstance The item to consume quantity from.
 	 * @param QuantityToConsume The amount to subtract from the item. Must be >= 0.
-	 * @return A copy of the Item that was consumed with the quantity set to the actual amount consumed.
+	 * @return The amount that was consumed.
 	 */
-	TInstancedStruct<FItem> ConsumeItem(FItemInstance* ItemInstance, const int32 QuantityToConsume);
+	int32 ConsumeItem(FItemInstance* ItemInstance, const int32 QuantityToConsume);
 
 	/**
 	 * Consumes the specified quantity of the item. If the quantity reaches 0, the item is removed from the ItemManager.
 	 * @param ItemGuid The item to consume quantity from.
 	 * @param QuantityToConsume The amount to subtract from the item. Must be >= 0.
-	 * @return A copy of the Item that was consumed with the quantity set to the actual amount consumed.
+	 * @return The amount that was consumed.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	TInstancedStruct<FItem> ConsumeItemByGuid(const FGuid ItemGuid, const int32 QuantityToConsume);
+	int32 ConsumeItemByGuid(const FGuid ItemGuid, const int32 QuantityToConsume = 1);
 
 	/**
 	 * Gets all items with the matching ItemDef. Then subtracts quantity from them until the amount subtracted has reached
 	 * 0. Then, if an item's quantity is 0, removes the item from the ItemContainer.
 	 * @param ItemDefinition The ItemDef to look for amongst items.
 	 * @param QuantityToConsume The amount to subtract from the items.
+	 * @return The amount that was consumed.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	TArray<TInstancedStruct<FItem>> ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, int32 QuantityToConsume);
+	int32 ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, const int32 QuantityToConsume);
 
 	/**
 	 * Gets all items with the matching ItemDef in the ItemContainer. Then subtracts quantity from them until the amount subtracted has reached
@@ -194,17 +187,15 @@ public:
 	 * @param ItemDefinition The ItemDef to look for amongst items.
 	 * @param QuantityToConsume The amount to subtract from the items.
 	 * @param ItemContainer The items will only be consumed from the specified ItemContainer.
+	 * @return The amount that was consumed.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	TArray<TInstancedStruct<FItem>> ConsumeItemsByDefinitionInContainer(
-		const UItemDefinition* ItemDefinition,
-		int32 QuantityToConsume,
-		UItemContainer* ItemContainer);
+	int32 ConsumeItemsByDefinitionInContainer(const UItemDefinition* ItemDefinition, const int32 QuantityToConsume, UItemContainer* ItemContainer);
 
 	/**
 	 * Tries to move an ItemInstance managed by the ItemManagerComponent into a different ItemContainer. Either in full or partial.
 	 * @param ItemInstance The ItemInstance to move.
-	 * @param Container The Container to move the ItemInstance into.
+	 * @param ItemContainer The Container to move the ItemInstance into.
 	 * @param QuantityToMove The amount from the Item to move into the Container.
 	 */
 	void TryMoveItem(FItemInstance* ItemInstance, UItemContainer* ItemContainer, int32 QuantityToMove);
@@ -336,7 +327,7 @@ private:
 	void Internal_ExecuteAddItemPlan_Move(FItemInstance* ItemInstance, UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan);
 
 	/** Adds an Item to the ItemList. */
-	void Internal_AddItem(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, UItemContainer* ItemContainer);
+	void Internal_AddItem(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
 
 	/** Removes an Item from the ItemList. */
 	void Internal_RemoveItem(FGuid ItemGuid, UItemContainer* ItemContainer);

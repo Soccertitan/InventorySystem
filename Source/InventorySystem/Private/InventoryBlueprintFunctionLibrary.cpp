@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "InventoryBlueprintFunctionLibrary.h"
@@ -23,13 +23,9 @@ UInventoryManagerComponent* UInventoryBlueprintFunctionLibrary::GetInventoryMana
 	return Actor->FindComponentByClass<UInventoryManagerComponent>();
 }
 
-int32 UInventoryBlueprintFunctionLibrary::GetItemQuantity(const TInstancedStruct<FItem>& Item)
+bool UInventoryBlueprintFunctionLibrary::IsItemInstanceValid(const FItemInstance& ItemInstance)
 {
-	if (Item.IsValid())
-	{
-		return Item.Get().GetQuantity();
-	}
-	return 0;
+	return ItemInstance.IsValid();
 }
 
 const UItemDefinition* UInventoryBlueprintFunctionLibrary::GetItemDefinition(const TInstancedStruct<FItem>& Item)

@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -220,23 +220,23 @@ public:
 	virtual bool CanRemoveItem(const TInstancedStruct<FItem>& Item) const;
 
 	/**
-	 * @param Item The item to check if it can be split.
+	 * @param ItemInstance The item to check if it can be split.
 	 * @param Quantity The amount to try and split off from the Item.
 	 * @return True, if the item can be split into two stacks in the ItemContainer.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item Container")
-	virtual bool CanSplitItemStack(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity) const;
+	virtual bool CanSplitItemStack(UPARAM(ref) const FItemInstance& ItemInstance, const int32 Quantity) const;
 
 	/**
 	 * Checks to see if the items are matching and how much of the SourceItem can be added to the TargetItem.
-	 * @param SourceItem The item you want to take Quantity from to add to TargetItem.
-	 * @param TargetItem The item you want to add Quantity to.
+	 * @param SourceItemInstance The item you want to take Quantity from to add to TargetItem.
+	 * @param TargetItemInstance The item you want to add Quantity to.
 	 * @param QuantityToStack The amount of item you want to take from the SourceItem and place into the TargetItem.
 	 * @param OutQuantity The quantity allowed to be added to the TargetItem.
 	 * @return True, if SourceItemInstance can be stacked into the TargetItemInstance.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item Container")
-	virtual bool CanStackItems(const TInstancedStruct<FItem>& TargetItem, const TInstancedStruct<FItem>& SourceItem, const int32 QuantityToStack, int32& OutQuantity) const;
+	virtual bool CanStackItems(const FItemInstance& TargetItemInstance, const FItemInstance& SourceItemInstance, const int32 QuantityToStack, int32& OutQuantity) const;
 
 	/**
 	 * Finds all items by definition and returns the total quantity in the ItemContainer

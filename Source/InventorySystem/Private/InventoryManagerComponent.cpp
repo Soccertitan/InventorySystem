@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 
 #include "InventoryManagerComponent.h"
@@ -163,7 +163,7 @@ TArray<FItemInstance> UInventoryManagerComponent::K2_FindItemsByDefinition(const
 	return Result;
 }
 
-TInstancedStruct<FItem> UInventoryManagerComponent::CreateItem(const UItemDefinition* ItemDefinition, const int32 Quantity)
+TInstancedStruct<FItem> UInventoryManagerComponent::CreateItem(const UItemDefinition* ItemDefinition)
 {
 	if (!ItemDefinition ||
 		!ItemDefinition->ItemClass.GetScriptStruct())
@@ -175,7 +175,6 @@ TInstancedStruct<FItem> UInventoryManagerComponent::CreateItem(const UItemDefini
 	Result.InitializeAsScriptStruct(ItemDefinition->ItemClass.GetScriptStruct());
 	FItem* ItemPtr = Result.GetMutablePtr<FItem>();
 	ItemPtr->Initialize(ItemDefinition);
-	ItemPtr->Quantity = FMath::Max(1, Quantity);
 	for (const TInstancedStruct<FItemFragment>& Fragment : ItemDefinition->Fragments)
 	{
 		Fragment.Get<FItemFragment>().SetDefaultValues(Result);
@@ -183,25 +182,7 @@ TInstancedStruct<FItem> UInventoryManagerComponent::CreateItem(const UItemDefini
 	return Result;
 }
 
-TInstancedStruct<FItem> UInventoryManagerComponent::DuplicateItem(const TInstancedStruct<FItem>& Item, const int32 Quantity)
-{
-	TInstancedStruct<FItem> Result;
-	if (!Item.IsValid())
-	{
-		return Result;
-	}
-
-	if (Item.Get<FItem>().GetItemDefinition().IsNull())
-	{
-		return Result;
-	}
-
-	Result = Item;
-	Result.GetMutablePtr<FItem>()->Quantity = FMath::Max(1, Quantity);
-	return Result;
-}
-
-FAddItemPlanResult UInventoryManagerComponent::TryAddItem(const TInstancedStruct<FItem>& Item, UItemContainer* ItemContainer)
+FAddItemPlanResult UInventoryManagerComponent::TryAddItem(const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer)
 {
 	FAddItemPlanResult Result;
 	if (!HasAuthority())
@@ -215,22 +196,31 @@ FAddItemPlanResult UInventoryManagerComponent::TryAddItem(const TInstancedStruct
 		Result.Error = FInventoryGameplayTags::Get().ItemAddResult_Error_ContainerNotFound;
 		return Result;
 	}
+	
+	if (Quantity <= 0)
+	{
+		Result.Error = FInventoryGameplayTags::Get().ItemAddResult_Error_InvalidQuantity;
+		return Result;
+	}
 
 	if (!ItemContainer->CanAddItem(Item, Result.Error))
 	{
 		return Result;
 	}
 
-	FAddItemPlan AddItemPlan(Item.Get().GetQuantity()); 
+	FAddItemPlan AddItemPlan(Quantity);
 	ItemContainer->GetAddItemPlan(Item, AddItemPlan);
 	Result.ItemGuids = Internal_ExecuteAddItemPlan(ItemContainer, AddItemPlan);
-	
+	Result.Result = AddItemPlan.GetResult();
+	Result.AmountGiven = AddItemPlan.GetAmountGiven();
+	Result.AmountToGive = AddItemPlan.GetAmountToGive();
+	Result.Error = AddItemPlan.Error;
 	return Result;
 }
 
-FAddItemPlanResult UInventoryManagerComponent::TryAddItemByGuid(const TInstancedStruct<FItem>& Item, const FGameplayTag ItemContainerTag)
+FAddItemPlanResult UInventoryManagerComponent::TryAddItemByTag(const TInstancedStruct<FItem>& Item, const int32 Quantity, const FGameplayTag ItemContainerTag)
 {
-	return TryAddItem(Item, FindItemContainerByTag(ItemContainerTag));
+	return TryAddItem(Item, Quantity, FindItemContainerByTag(ItemContainerTag));
 }
 
 TInstancedStruct<FItem> UInventoryManagerComponent::TryRemoveItem(FItemInstance* ItemInstance)
@@ -256,21 +246,17 @@ TInstancedStruct<FItem> UInventoryManagerComponent::TryRemoveItemByGuid(const FG
 	return TryRemoveItem(FindItemByGuid(ItemGuid));
 }
 
-TInstancedStruct<FItem> UInventoryManagerComponent::ConsumeItem(FItemInstance* ItemInstance, const int32 QuantityToConsume)
+int32 UInventoryManagerComponent::ConsumeItem(FItemInstance* ItemInstance, const int32 QuantityToConsume)
 {
-	TInstancedStruct<FItem> Result;
-
 	if (!HasAuthority() || !ItemInstance || !ItemInstance->IsValid() || QuantityToConsume <= 0)
 	{
-		return Result;
+		return 0;
 	}
 
-	FItem* MutableItem = ItemInstance->Item.GetMutablePtr<FItem>();
-	const int32 NewQuantity = FMath::Max(MutableItem->Quantity - QuantityToConsume, 0);
-	const int32 Delta = MutableItem->Quantity - NewQuantity;
-	Result = DuplicateItem(ItemInstance->Item, Delta);
+	const int32 NewQuantity = FMath::Max(ItemInstance->Quantity - QuantityToConsume, 0);
+	const int32 Delta = ItemInstance->Quantity - NewQuantity;
 
-	MutableItem->Quantity = NewQuantity;
+	ItemInstance->Quantity = NewQuantity;
 	MarkItemDirty(*ItemInstance);
 
 	if (NewQuantity <= 0)
@@ -278,23 +264,22 @@ TInstancedStruct<FItem> UInventoryManagerComponent::ConsumeItem(FItemInstance* I
 		Internal_RemoveItem(ItemInstance->GetGuid(), ItemInstance->GetItemContainer());
 	}
 
-	return Result;
+	return Delta;
 }
 
-TInstancedStruct<FItem> UInventoryManagerComponent::ConsumeItemByGuid(const FGuid ItemGuid, const int32 QuantityToConsume)
+int32 UInventoryManagerComponent::ConsumeItemByGuid(const FGuid ItemGuid, const int32 QuantityToConsume)
 {
 	return ConsumeItem(FindItemByGuid(ItemGuid), QuantityToConsume);
 }
 
-TArray<TInstancedStruct<FItem>> UInventoryManagerComponent::ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, int32 QuantityToConsume)
+int32 UInventoryManagerComponent::ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, int32 QuantityToConsume)
 {
-	TArray<TInstancedStruct<FItem>> Result;
+	int32 Result = 0;
 	int32 QuantityRemaining = QuantityToConsume;
 	for (FItemInstance*& ItemInstance : FindItemsByDefinition(ItemDefinition))
 	{
-		TInstancedStruct<FItem> ConsumedItem = ConsumeItem(ItemInstance, QuantityRemaining);
-		Result.Add(ConsumedItem);
-		QuantityRemaining = FMath::Max(QuantityRemaining - ConsumedItem.Get().GetQuantity(), 0);
+		Result += ConsumeItem(ItemInstance, QuantityRemaining);
+		QuantityRemaining = FMath::Max(QuantityToConsume - Result, 0);
 
 		if (QuantityRemaining == 0)
 		{
@@ -304,18 +289,16 @@ TArray<TInstancedStruct<FItem>> UInventoryManagerComponent::ConsumeItemsByDefini
 	return Result;
 }
 
-TArray<TInstancedStruct<FItem>> UInventoryManagerComponent::ConsumeItemsByDefinitionInContainer(
-	const UItemDefinition* ItemDefinition, int32 QuantityToConsume, UItemContainer* ItemContainer)
+int32 UInventoryManagerComponent::ConsumeItemsByDefinitionInContainer(const UItemDefinition* ItemDefinition, const int32 QuantityToConsume, UItemContainer* ItemContainer)
 {
-	TArray<TInstancedStruct<FItem>> Result;
+	int32 Result = 0;
 	if (ItemContainer)
 	{
 		int32 QuantityRemaining = QuantityToConsume;
 		for (FItemInstance*& ItemInstance : ItemContainer->FindItemsByDefinition(ItemDefinition))
 		{
-			TInstancedStruct<FItem> ConsumedItem = ConsumeItem(ItemInstance, QuantityRemaining);
-			Result.Add(ConsumedItem);
-			QuantityRemaining = FMath::Max(QuantityRemaining - ConsumedItem.Get().GetQuantity(), 0);
+			Result += ConsumeItem(ItemInstance, QuantityRemaining);
+			QuantityRemaining = FMath::Max(QuantityToConsume - Result, 0);
 
 			if (QuantityRemaining == 0)
 			{
@@ -326,29 +309,29 @@ TArray<TInstancedStruct<FItem>> UInventoryManagerComponent::ConsumeItemsByDefini
 	return Result;
 }
 
-void UInventoryManagerComponent::TryMoveItem(FItemInstance* ItemInstance, UItemContainer* Container, int32 QuantityToMove)
+void UInventoryManagerComponent::TryMoveItem(FItemInstance* ItemInstance, UItemContainer* ItemContainer, int32 QuantityToMove)
 {
-	if (!HasAuthority() || !ItemInstance || !ItemInstance->IsValid() || !Container || QuantityToMove <= 0)
+	if (!HasAuthority() || !ItemInstance || !ItemInstance->IsValid() || !ItemContainer || QuantityToMove <= 0)
 	{
 		return;
 	}
 
-	if (ItemInstance->GetItemContainer() == Container)
+	if (ItemInstance->GetItemContainer() == ItemContainer)
 	{
 		return;
 	}
 
 	FGameplayTag AddItemError;
-	if (!Container->CanAddItem(ItemInstance->Item, AddItemError))
+	if (!ItemContainer->CanAddItem(ItemInstance->Item, AddItemError))
 	{
 		return;
 	}
 
-	QuantityToMove = FMath::Min(ItemInstance->Item.Get().GetQuantity(), QuantityToMove);
-	TInstancedStruct<FItem> ItemToMove = DuplicateItem(ItemInstance->Item, QuantityToMove);
+	QuantityToMove = FMath::Min(ItemInstance->GetQuantity(), QuantityToMove);
+	TInstancedStruct<FItem> ItemToMove = ItemInstance->Item;
 	FAddItemPlan AddItemPlan(QuantityToMove);
-	Container->GetAddItemPlan(ItemToMove, AddItemPlan);
-	Internal_ExecuteAddItemPlan_Move(ItemInstance, Container, AddItemPlan);
+	ItemContainer->GetAddItemPlan(ItemToMove, AddItemPlan);
+	Internal_ExecuteAddItemPlan_Move(ItemInstance, ItemContainer, AddItemPlan);
 }
 
 void UInventoryManagerComponent::K2_TryMoveItem(FGuid ItemGuid, FGameplayTag ItemContainerTag, int32 QuantityToMove)
@@ -363,15 +346,14 @@ void UInventoryManagerComponent::SplitItemStack(FItemInstance* ItemInstance, int
 		return;
 	}
 
-	if (!ItemInstance->GetItemContainer()->CanSplitItemStack(ItemInstance->Item, Quantity))
+	if (!ItemInstance->GetItemContainer()->CanSplitItemStack(*ItemInstance, Quantity))
 	{
 		return;
 	}
 
-	ItemInstance->Item.GetMutablePtr<FItem>()->Quantity -= Quantity;
+	ItemInstance->Quantity -= Quantity;
 	MarkItemDirty(*ItemInstance);
-	TInstancedStruct<FItem> NewItem = DuplicateItem(ItemInstance->Item, Quantity);
-	Internal_AddItem(FGuid::NewGuid(), NewItem, ItemInstance->GetItemContainer());
+	Internal_AddItem(FGuid::NewGuid(), ItemInstance->Item, Quantity, ItemInstance->GetItemContainer());
 }
 
 void UInventoryManagerComponent::K2_SplitItemStack(const FGuid ItemGuid, const int32 Quantity)
@@ -388,7 +370,7 @@ void UInventoryManagerComponent::StackItems(FItemInstance* TargetItemInstance, F
 	}
 
 	int32 QuantityToStack = 0;
-	if (!TargetItemInstance->GetItemContainer()->CanStackItems(TargetItemInstance->Item, SourceItemInstance->Item,
+	if (!TargetItemInstance->GetItemContainer()->CanStackItems(*TargetItemInstance, *SourceItemInstance,
 		Quantity, QuantityToStack))
 	{
 		return;
@@ -399,11 +381,11 @@ void UInventoryManagerComponent::StackItems(FItemInstance* TargetItemInstance, F
 		return;
 	}
 
-	TargetItemInstance->Item.GetMutablePtr<FItem>()->Quantity += QuantityToStack;
-	SourceItemInstance->Item.GetMutablePtr<FItem>()->Quantity -= QuantityToStack;
+	TargetItemInstance->Quantity += QuantityToStack;
+	SourceItemInstance->Quantity -= QuantityToStack;
 	MarkItemDirty(*TargetItemInstance);
 	MarkItemDirty(*SourceItemInstance);
-	if (SourceItemInstance->Item.Get().GetQuantity() <= 0)
+	if (SourceItemInstance->GetQuantity() <= 0)
 	{
 		Internal_RemoveItem(SourceItemInstance->GetGuid(), SourceItemInstance->GetItemContainer());
 	}
@@ -548,7 +530,7 @@ void UInventoryManagerComponent::LoadSavedData(const TArray<FItemContainerSaveDa
 					NewItem.Serialize(Ar);
 					if (NewItem.IsValid())
 					{
-						Internal_AddItem(ItemData.Guid, NewItem, NewContainer);
+						Internal_AddItem(ItemData.Guid, NewItem, ItemData.Quantity, NewContainer);
 					}
 				}
 			}
@@ -616,7 +598,7 @@ void UInventoryManagerComponent::InitializeStartupItems()
 				{
 					for (const FItemSetInstance& ItemInstance : ItemSet->ItemInstances)
 					{
-						TryAddItem(ItemInstance.GetItem(), Container);	
+						TryAddItem(ItemInstance.GetItem(), ItemInstance.GetQuantity(), Container);	
 					}
 				}
 			}
@@ -638,15 +620,14 @@ TArray<FGuid> UInventoryManagerComponent::Internal_ExecuteAddItemPlan(UItemConta
 		
 		if (Entry.ItemInstance)
 		{
-			Entry.ItemInstance->Item.GetMutable().Quantity += Entry.QuantityToAdd;
+			Entry.ItemInstance->Quantity += Entry.QuantityToAdd;
 			MarkItemDirty(*Entry.ItemInstance);
 			Result.Add(Entry.ItemInstance->GetGuid());
 		}
 		else
 		{
-			TInstancedStruct<FItem> NewItem = DuplicateItem(Entry.NewItem, Entry.QuantityToAdd);
 			FGuid NewGuid = FGuid::NewGuid();
-			Internal_AddItem(NewGuid, NewItem, ItemContainer);
+			Internal_AddItem(NewGuid, Entry.NewItem, Entry.QuantityToAdd, ItemContainer);
 			Result.Add(NewGuid);
 		}
 	}
@@ -657,7 +638,6 @@ TArray<FGuid> UInventoryManagerComponent::Internal_ExecuteAddItemPlan(UItemConta
 void UInventoryManagerComponent::Internal_ExecuteAddItemPlan_Move(FItemInstance* ItemInstance,
 	UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan)
 {
-	FItem* Item = ItemInstance->Item.GetMutablePtr<FItem>();
 	bool bItemWasMoved = false;
 	for (const FAddItemPlanEntry& Entry : AddItemPlan.GetEntries())
 	{
@@ -668,22 +648,22 @@ void UInventoryManagerComponent::Internal_ExecuteAddItemPlan_Move(FItemInstance*
 		
 		if (Entry.ItemInstance)
 		{
-			Entry.ItemInstance->Item.GetMutable().Quantity += Entry.QuantityToAdd;
-			Item->Quantity -= Entry.QuantityToAdd;
+			Entry.ItemInstance->Quantity += Entry.QuantityToAdd;
+			ItemInstance->Quantity -= Entry.QuantityToAdd;
 			MarkItemDirty(*Entry.ItemInstance);
 		}
 		else
 		{
-			TInstancedStruct<FItem> NewItem = DuplicateItem(Entry.NewItem, Entry.QuantityToAdd);
-			if (Entry.QuantityToAdd < Item->GetQuantity())
+			if (Entry.QuantityToAdd < ItemInstance->GetQuantity())
 			{
 				FGuid NewGuid = FGuid::NewGuid();
-				Internal_AddItem(NewGuid, NewItem, ItemContainer);
-				Item->Quantity -= Entry.QuantityToAdd;
+				Internal_AddItem(NewGuid, Entry.NewItem, Entry.QuantityToAdd, ItemContainer);
+				ItemInstance->Quantity -= Entry.QuantityToAdd;
 			}
 			else
 			{
-				Internal_AddItem(ItemInstance->GetGuid(), NewItem, ItemContainer);
+				Internal_AddItem(ItemInstance->GetGuid(), Entry.NewItem, Entry.QuantityToAdd, ItemContainer);
+				ItemInstance->WeakMovedToItemContainer = ItemContainer;
 				Internal_RemoveItem(ItemInstance->GetGuid(), ItemInstance->GetItemContainer());
 				bItemWasMoved = true;
 			}
@@ -691,15 +671,15 @@ void UInventoryManagerComponent::Internal_ExecuteAddItemPlan_Move(FItemInstance*
 	}
 
 	MarkItemDirty(*ItemInstance);
-	if (Item->GetQuantity() <= 0 && bItemWasMoved == false)
+	if (ItemInstance->GetQuantity() <= 0 && bItemWasMoved == false)
 	{
 		Internal_RemoveItem(ItemInstance->GetGuid(), ItemInstance->GetItemContainer());
 	}
 }
 
-void UInventoryManagerComponent::Internal_AddItem(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, UItemContainer* ItemContainer)
+void UInventoryManagerComponent::Internal_AddItem(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer)
 {
-	ItemContainer->ItemInstanceContainer.AddItem(ItemGuid, Item);
+	ItemContainer->ItemInstanceContainer.AddItem(ItemGuid, Item, Quantity);
 }
 
 void UInventoryManagerComponent::Internal_RemoveItem(FGuid ItemGuid, UItemContainer* ItemContainer)

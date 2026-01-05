@@ -1,4 +1,4 @@
-﻿// Copyright Soccertitan
+﻿// Copyright Soccertitan 2025
 
 #pragma once
 
@@ -18,6 +18,7 @@ struct INVENTORYSYSTEM_API FItemSetInstance
 	GENERATED_BODY()
 
 	const TInstancedStruct<FItem>& GetItem() const;
+	int32 GetQuantity() const;
 
 	void PostSerialize(const FArchive& Ar);
 
@@ -28,6 +29,10 @@ private:
 	UPROPERTY(EditAnywhere, meta = (StructTypeConst, FullyExpand=true, EditCondition=bShowItem,
 		EditConditionHides, HideEditConditionToggle, AllowPrivateAccess, ShowOnlyInnerProperties))
 	TInstancedStruct<FItem> Item;
+	
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 1, EditCondition=bShowItem,
+		EditConditionHides, HideEditConditionToggle, AllowPrivateAccess))
+	int32 Quantity = 1;
 	
 	UPROPERTY()
 	bool bShowItem = false;
