@@ -47,6 +47,10 @@ protected:
 	/** Tags the ItemContainer has. */
 	UPROPERTY(EditDefaultsOnly, Category = "Item Container")
 	FGameplayTagContainer OwnedTags;
+	
+	/** Defines who to replicate the ItemContainer to. */
+	UPROPERTY(EditDefaultsOnly, Category = "Item Container")
+	TEnumAsByte<ELifetimeCondition> NetCondition = COND_None;
 
 	/** Additional rules that govern if an item can be added to the ItemContainer. */
 	UPROPERTY(EditDefaultsOnly, Category = "Item Container|Rule")

@@ -419,7 +419,7 @@ UItemContainer* UInventoryManagerComponent::CreateItemContainer(FGameplayTag Ite
 
 	UItemContainer* NewContainer = NewObject<UItemContainer>(this, ItemContainerClass);
 	NewContainer->Initialize();
-	AddReplicatedSubObject(NewContainer);
+	AddReplicatedSubObject(NewContainer, NewContainer->NetCondition);
 	InventoryContainerInstanceContainer.AddItemContainer(NewContainer, ItemContainerTag);
 	return NewContainer;
 }
