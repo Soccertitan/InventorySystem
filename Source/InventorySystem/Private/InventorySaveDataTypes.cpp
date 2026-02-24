@@ -32,7 +32,7 @@ FItemContainerSaveData::FItemContainerSaveData(const FItemContainerInstance& Ite
 		return;
 	}
 
-	ContainerTag = ItemContainerInstance.GetItemContainerTag();
+	ContainerTag = ItemContainerInstance.GetItemContainer()->GetItemContainerTag();
 	ContainerClass = ItemContainerInstance.GetItemContainer()->GetClass();
 
 	FMemoryWriter MemWriter(ByteData);

@@ -76,7 +76,7 @@ TArray<UItemInstanceViewModel*> UItemContainerViewModel::GetItemInstanceViewMode
 	return ItemInstanceViewModels;
 }
 
-void UItemContainerViewModel::Internal_OnItemAdded(UItemContainer* InContainer, const FItemInstance& ItemInstance)
+void UItemContainerViewModel::Internal_OnItemAdded(const FItemInstance& ItemInstance)
 {
 	if (DoesItemHaveUIFragment(ItemInstance.GetItem()))
 	{
@@ -91,7 +91,7 @@ void UItemContainerViewModel::Internal_OnItemAdded(UItemContainer* InContainer, 
 	}
 }
 
-void UItemContainerViewModel::Internal_OnItemRemoved(UItemContainer* InContainer, const FItemInstance& ItemInstance)
+void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemInstance)
 {
 	for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 	{
@@ -110,7 +110,7 @@ void UItemContainerViewModel::Internal_OnItemRemoved(UItemContainer* InContainer
 	}
 }
 
-void UItemContainerViewModel::Internal_OnItemChanged(UItemContainer* InContainer, const FItemInstance& ItemInstance)
+void UItemContainerViewModel::Internal_OnItemChanged(const FItemInstance& ItemInstance)
 {
 	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
 	{

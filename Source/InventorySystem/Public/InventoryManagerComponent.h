@@ -16,7 +16,7 @@
 class UItemDefinition;
 class UItemContainer;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryManagerItemSignature, UInventoryManagerComponent*, InventoryManagerComponent, const FItemInstance&, ItemInstance);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryManagerItemSignature, const FItemInstance&, ItemInstance);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryManagerContainerSignature, UInventoryManagerComponent*, InventoryManagerComponent, UItemContainer*, Container);
 
 /**

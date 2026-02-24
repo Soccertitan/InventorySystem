@@ -78,7 +78,7 @@ private:
 	void ClearItemDrops();
 
 	UFUNCTION()
-	void OnItemRemoved(UInventoryManagerComponent* InventoryManager, const FItemInstance& ItemInstance);
+	void OnItemRemoved(const FItemInstance& ItemInstance);
 
 	void Internal_RemoveItemDrop(AItemDrop* ItemDrop);
 };

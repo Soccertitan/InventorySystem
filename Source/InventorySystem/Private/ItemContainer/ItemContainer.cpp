@@ -34,6 +34,9 @@ void UItemContainer::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Params.bIsPushBased = true;
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, ItemInstanceContainer, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, CapacityLimit, Params);
+	
+	Params.Condition = COND_InitialOnly;
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, ItemContainerTag, Params);
 }
 
 #if UE_WITH_IRIS
@@ -497,7 +500,7 @@ void UItemContainer::Internal_OnItemAdded(const FItemInstance& ItemInstance)
 {
 	OnItemAdded(ItemInstance);
 	K2_OnItemAdded(ItemInstance);
-	OnItemAddedDelegate.Broadcast(this, ItemInstance);
+	OnItemAddedDelegate.Broadcast(ItemInstance);
 	InventoryManagerComponent->OnItemAdded(ItemInstance);
 }
 
@@ -505,7 +508,7 @@ void UItemContainer::Internal_OnItemRemoved(const FItemInstance& ItemInstance)
 {
 	OnItemRemoved(ItemInstance);
 	K2_OnItemRemoved(ItemInstance);
-	OnItemRemovedDelegate.Broadcast(this, ItemInstance);
+	OnItemRemovedDelegate.Broadcast(ItemInstance);
 	InventoryManagerComponent->OnItemRemoved(ItemInstance);
 }
 
@@ -513,7 +516,7 @@ void UItemContainer::Internal_OnItemChanged(const FItemInstance& ItemInstance)
 {
 	OnItemChanged(ItemInstance);
 	K2_OnItemChanged(ItemInstance);
-	OnItemChangedDelegate.Broadcast(this, ItemInstance);
+	OnItemChangedDelegate.Broadcast(ItemInstance);
 	InventoryManagerComponent->OnItemChanged(ItemInstance);
 }
 

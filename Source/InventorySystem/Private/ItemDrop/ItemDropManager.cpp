@@ -111,7 +111,7 @@ AItemDrop* AItemDropManager::Internal_CreateItemDrop(const FGuid ItemGuid, const
 	return NewItemDrop;
 }
 
-void AItemDropManager::OnItemRemoved(UInventoryManagerComponent* InventoryManager, const FItemInstance& ItemInstance)
+void AItemDropManager::OnItemRemoved(const FItemInstance& ItemInstance)
 {
 	for (TObjectPtr<AItemDrop>& ItemDrop : ItemDrops)
 	{

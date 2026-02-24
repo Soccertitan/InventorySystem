@@ -396,8 +396,7 @@ void UInventoryManagerComponent::K2_StackItems(FGuid TargetItemGuid, FGuid Sourc
 	StackItems(FindItemByGuid(TargetItemGuid), FindItemByGuid(SourceItemGuid), Quantity);
 }
 
-UItemContainer* UInventoryManagerComponent::CreateItemContainer(FGameplayTag ItemContainerTag,
-	TSubclassOf<UItemContainer> ItemContainerClass)
+UItemContainer* UInventoryManagerComponent::CreateItemContainer(FGameplayTag ItemContainerTag, TSubclassOf<UItemContainer> ItemContainerClass)
 {
 	if (!HasAuthority() || !ItemContainerClass)
 	{
@@ -418,9 +417,11 @@ UItemContainer* UInventoryManagerComponent::CreateItemContainer(FGameplayTag Ite
 	}
 
 	UItemContainer* NewContainer = NewObject<UItemContainer>(this, ItemContainerClass);
+	NewContainer->ItemContainerTag = ItemContainerTag;
+	MARK_PROPERTY_DIRTY_FROM_NAME(UItemContainer, ItemContainerTag, NewContainer);
 	NewContainer->Initialize();
 	AddReplicatedSubObject(NewContainer, NewContainer->NetCondition);
-	InventoryContainerInstanceContainer.AddItemContainer(NewContainer, ItemContainerTag);
+	InventoryContainerInstanceContainer.AddItemContainer(NewContainer);
 	return NewContainer;
 }
 
@@ -563,17 +564,17 @@ void UInventoryManagerComponent::OnContainerRemoved(const FItemContainerInstance
 
 void UInventoryManagerComponent::OnItemAdded(const FItemInstance& ItemInstance)
 {
-	OnItemAddedDelegate.Broadcast(this, ItemInstance);
+	OnItemAddedDelegate.Broadcast(ItemInstance);
 }
 
 void UInventoryManagerComponent::OnItemRemoved(const FItemInstance& ItemInstance)
 {
-	OnItemRemovedDelegate.Broadcast(this, ItemInstance);
+	OnItemRemovedDelegate.Broadcast(ItemInstance);
 }
 
 void UInventoryManagerComponent::OnItemChanged(const FItemInstance& ItemInstance)
 {
-	OnItemChangedDelegate.Broadcast(this, ItemInstance);
+	OnItemChangedDelegate.Broadcast(ItemInstance);
 }
 
 void UInventoryManagerComponent::CacheIsNetSimulated()

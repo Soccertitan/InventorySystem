@@ -182,11 +182,10 @@ void FItemContainerInstance::PreReplicatedRemove(const FItemContainerInstanceCon
 // ItemContainerInstanceContainer
 //----------------------------------------------------------------------------------------
 
-void FItemContainerInstanceContainer::AddItemContainer(UItemContainer* ItemContainer, const FGameplayTag& InContainerTag)
+void FItemContainerInstanceContainer::AddItemContainer(UItemContainer* ItemContainer)
 {
 	FItemContainerInstance& NewEntry = Items.AddDefaulted_GetRef();
 	NewEntry.ItemContainer = ItemContainer;
-	NewEntry.ItemContainerTag = InContainerTag;
 	Owner->OnContainerAdded(NewEntry);
 	MarkItemDirty(NewEntry);
 }
@@ -216,7 +215,7 @@ void FItemContainerInstanceContainer::RemoveItemContainer(const FGameplayTag& It
 		for (auto EntryIt = Items.CreateIterator(); EntryIt; ++EntryIt)
 		{
 			FItemContainerInstance& Entry = *EntryIt;
-			if (Entry.ItemContainerTag == ItemContainerTag)
+			if (Entry.ItemContainer->GetItemContainerTag() == ItemContainerTag)
 			{
 				FItemContainerInstance TempEntry(Entry);
 				EntryIt.RemoveCurrentSwap();
@@ -236,7 +235,7 @@ UItemContainer* FItemContainerInstanceContainer::GetItemContainerByTag(const FGa
 {
 	for (const FItemContainerInstance& ItemContainerInstance : Items)
 	{
-		if (ItemContainerInstance.GetItemContainerTag() == ItemContainerTag)
+		if (ItemContainerInstance.ItemContainer->GetItemContainerTag() == ItemContainerTag)
 		{
 			return ItemContainerInstance.GetItemContainer();
 		}

@@ -151,7 +151,6 @@ struct INVENTORYSYSTEM_API FItemContainerInstance : public FFastArraySerializerI
 	FString ToDebugString() const;
 
 	UItemContainer* GetItemContainer() const { return ItemContainer; }
-	FGameplayTag GetItemContainerTag() const { return ItemContainerTag; }
 
 	//~ Begin of FFastArraySerializerItem
 	void PostReplicatedAdd(const struct FItemContainerInstanceContainer& InSerializer);
@@ -161,10 +160,6 @@ struct INVENTORYSYSTEM_API FItemContainerInstance : public FFastArraySerializerI
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TObjectPtr<UItemContainer> ItemContainer = nullptr;
-
-	/** Identifies an ItemContainer. */
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
-	FGameplayTag ItemContainerTag;
 
 	friend struct FItemContainerInstanceContainer;
 
@@ -189,7 +184,7 @@ struct INVENTORYSYSTEM_API FItemContainerInstanceContainer : public FFastArraySe
 	FItemContainerInstanceContainer() {}
 	
 	/** Adds a new ItemContainer. */
-	void AddItemContainer(UItemContainer* ItemContainer, const FGameplayTag& InContainerTag);
+	void AddItemContainer(UItemContainer* ItemContainer);
 
 	/**
 	 * Removes the ItemContainer.

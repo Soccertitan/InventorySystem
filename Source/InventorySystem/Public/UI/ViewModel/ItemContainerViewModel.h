@@ -94,7 +94,7 @@ private:
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
 	FText ItemContainerName;
 
-	void Internal_OnItemAdded(UItemContainer* InContainer, const FItemInstance& ItemInstance);
-	void Internal_OnItemRemoved(UItemContainer* InContainer, const FItemInstance& ItemInstance);
-	void Internal_OnItemChanged(UItemContainer* InContainer, const FItemInstance& ItemInstance);
+	void Internal_OnItemAdded(const FItemInstance& ItemInstance);
+	void Internal_OnItemRemoved(const FItemInstance& ItemInstance);
+	void Internal_OnItemChanged(const FItemInstance& ItemInstance);
 };

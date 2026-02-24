@@ -16,7 +16,7 @@ class UItemContainerRule_AddItem;
 class UItemContainerRule_ItemQuantity;
 class UItemContainerViewModel;
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FItemContainerItemInstanceSignature, UItemContainer*, const FItemInstance&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FItemContainerItemInstanceSignature, const FItemInstance&);
 
 /**
  * A basic implementation for an ItemContainer that can hold any number of ItemInstances.
@@ -79,6 +79,10 @@ public:
 	FItemContainerItemInstanceSignature OnItemRemovedDelegate;
 	/** Called when an item's property has changed in the container. */
 	FItemContainerItemInstanceSignature OnItemChangedDelegate;
+	
+	/** Unique tag of this ItemContainer in the InventoryManager. */
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Item Container")
+	FGameplayTag GetItemContainerTag() const {return ItemContainerTag;}
 
 	/** Returns the user facing display name. */
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item Container")
@@ -334,6 +338,10 @@ private:
 	/** All the Items contained in the ItemContainer. */
 	UPROPERTY(Replicated)
 	FItemInstanceContainer ItemInstanceContainer;
+	
+	/** An identifier to retrieve this ItemContainer. */
+	UPROPERTY(Replicated)
+	FGameplayTag ItemContainerTag;
 
 	/** The owner of this ItemContainer. */
 	UPROPERTY(Transient)
