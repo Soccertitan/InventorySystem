@@ -257,7 +257,7 @@ int32 UInventoryManagerComponent::ConsumeItem(FItemInstance* ItemInstance, const
 	const int32 Delta = ItemInstance->Quantity - NewQuantity;
 
 	ItemInstance->Quantity = NewQuantity;
-	MarkItemDirty(*ItemInstance);
+	ItemInstance->MarkItemDirty();
 
 	if (NewQuantity <= 0)
 	{
@@ -352,7 +352,7 @@ void UInventoryManagerComponent::SplitItemStack(FItemInstance* ItemInstance, int
 	}
 
 	ItemInstance->Quantity -= Quantity;
-	MarkItemDirty(*ItemInstance);
+	ItemInstance->MarkItemDirty();
 	Internal_AddItem(FGuid::NewGuid(), ItemInstance->Item, Quantity, ItemInstance->GetItemContainer());
 }
 
@@ -383,8 +383,8 @@ void UInventoryManagerComponent::StackItems(FItemInstance* TargetItemInstance, F
 
 	TargetItemInstance->Quantity += QuantityToStack;
 	SourceItemInstance->Quantity -= QuantityToStack;
-	MarkItemDirty(*TargetItemInstance);
-	MarkItemDirty(*SourceItemInstance);
+	TargetItemInstance->MarkItemDirty();
+	SourceItemInstance->MarkItemDirty();
 	if (SourceItemInstance->GetQuantity() <= 0)
 	{
 		Internal_RemoveItem(SourceItemInstance->GetGuid(), SourceItemInstance->GetItemContainer());
@@ -544,14 +544,6 @@ bool UInventoryManagerComponent::HasAuthority() const
 	return !bCachedIsNetSimulated;
 }
 
-void UInventoryManagerComponent::MarkItemDirty(FItemInstance& ItemInstance)
-{
-	if (ItemInstance.GetItemContainer())
-	{
-		ItemInstance.GetItemContainer()->MarkItemDirty(ItemInstance);
-	}
-}
-
 void UInventoryManagerComponent::OnContainerAdded(const FItemContainerInstance& ContainerInstance)
 {
 	OnContainerAddedDelegate.Broadcast(this, ContainerInstance.GetItemContainer());
@@ -622,7 +614,7 @@ TArray<FGuid> UInventoryManagerComponent::Internal_ExecuteAddItemPlan(UItemConta
 		if (Entry.ItemInstance)
 		{
 			Entry.ItemInstance->Quantity += Entry.QuantityToAdd;
-			MarkItemDirty(*Entry.ItemInstance);
+			Entry.ItemInstance->MarkItemDirty();
 			Result.Add(Entry.ItemInstance->GetGuid());
 		}
 		else
@@ -651,7 +643,7 @@ void UInventoryManagerComponent::Internal_ExecuteAddItemPlan_Move(FItemInstance*
 		{
 			Entry.ItemInstance->Quantity += Entry.QuantityToAdd;
 			ItemInstance->Quantity -= Entry.QuantityToAdd;
-			MarkItemDirty(*Entry.ItemInstance);
+			Entry.ItemInstance->MarkItemDirty();
 		}
 		else
 		{
@@ -671,7 +663,7 @@ void UInventoryManagerComponent::Internal_ExecuteAddItemPlan_Move(FItemInstance*
 		}
 	}
 
-	MarkItemDirty(*ItemInstance);
+	ItemInstance->MarkItemDirty();
 	if (ItemInstance->GetQuantity() <= 0 && bItemWasMoved == false)
 	{
 		Internal_RemoveItem(ItemInstance->GetGuid(), ItemInstance->GetItemContainer());

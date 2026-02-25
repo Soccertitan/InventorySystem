@@ -33,6 +33,9 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	UItemContainer* GetItemContainer() const { return WeakItemContainer.Get(); }
 	UItemContainer* GetMovedToItemContainer() const { return WeakMovedToItemContainer.Get(); }
 	bool IsValid() const;
+	
+	/** You must manually call this when the ItemInstance has been modified. */
+	void MarkItemDirty();
 
 	//~ Begin of FFastArraySerializerItem
 	void PostReplicatedAdd(const struct FItemInstanceContainer& InSerializer);

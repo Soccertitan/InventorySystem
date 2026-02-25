@@ -49,6 +49,14 @@ bool FItemInstance::IsValid() const
 	return true;
 }
 
+void FItemInstance::MarkItemDirty()
+{
+	if (GetItemContainer())
+	{
+		GetItemContainer()->MarkItemDirty(*this);
+	}
+}
+
 void FItemInstance::PostReplicatedAdd(const FItemInstanceContainer& InSerializer)
 {
 	// Update our cached state.

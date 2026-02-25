@@ -278,11 +278,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Inventory Manager")
 	bool HasAuthority() const;
 
-	/**
-	 * You must manually call this when an Item stored in this ItemManager has been modified.
-	 */
-	void MarkItemDirty(FItemInstance& ItemInstance);
-
 protected:
 
 	virtual void OnContainerAdded(const FItemContainerInstance& ContainerInstance);
