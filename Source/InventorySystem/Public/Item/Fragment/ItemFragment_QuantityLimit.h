@@ -21,8 +21,4 @@ struct FItemFragment_QuantityLimit : public FItemFragment
 	/** The maximum number of unique ItemInstances allowed in a single ItemContainer. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	FQuantityLimit ItemContainer;
-
-	/** The maximum number of unique ItemInstances allowed across all ItemContainers. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
-	FQuantityLimit InventoryManager;
 };

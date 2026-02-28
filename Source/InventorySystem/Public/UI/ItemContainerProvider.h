@@ -39,7 +39,7 @@ public:
 };
 
 /**
- * Provides a game InventoryContainer from the widget's owning player.
+ * Provides an ItemContainer from the widget's owning player.
  * Checks the player pawn, player state, and player controller in that order.
  */
 UCLASS(DisplayName = "Player")

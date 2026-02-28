@@ -24,10 +24,6 @@ class INVENTORYSYSTEM_API UItemContainerViewModel : public UMVVMViewModelBase
 
 public:
 	UItemContainerViewModel();
-	
-	/** Updates the ItemContainer for this ViewModel. Triggers OnItemContainerSet if a new one is set. */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
-	void SetItemContainer(UItemContainer* InItemContainer);
 
 	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
 	UItemContainer* GetItemContainer() const;
@@ -42,10 +38,13 @@ public:
 	int32 GetMaxCapacity() const;
 
 	/** Called only once when the ItemInstanceViewModels are first created in SetItemContainer. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
-	TArray<UItemInstanceViewModel*> GetItemInstanceViewModels() const;
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model", DisplayName = GetItemInstanceViewModels)
+	TArray<UItemInstanceViewModel*> K2_GetItemInstanceViewModels() const;
+	
+	/** Returns a const reference to the array of ItemInstanceViewModels. */
+	const TArray<UItemInstanceViewModel*>& GetItemInstanceViewModels() const;
 
-	/** Called whenever an ItemInstanceViewModel is added to the ItemInstanceViewModels after initial setup. */
+	/** Called whenever an ItemInstanceViewModel is added to the ItemInstanceViewModels. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
 	UItemInstanceViewModel* GetAddedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
@@ -58,22 +57,21 @@ public:
 	UItemInstanceViewModel* GetChangedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 protected:
-	/** The ItemInstanceViewModelClass to create. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, NoClear, Category = "Item Container View Model")
-	TSubclassOf<UItemInstanceViewModel> ItemInstanceViewModelClass;
-
+	/** Updates the ItemContainer for this ViewModel. Triggers OnItemContainerSet if a new one is set. */
+	void SetItemContainer(UItemContainer* InItemContainer);
+	
 	/** Called when a valid ItemContainer is set. */
 	virtual void OnItemContainerSet() {}
 
 	/** Called whenever an item is added to the ItemContainer. */
-	virtual void OnItemAdded(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
+	virtual void OnItemAdded(UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is removed from the ItemContainer. */
-	virtual void OnItemRemoved(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
+	virtual void OnItemRemoved(UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is changed in the ItemContainer. */
-	virtual void OnItemChanged(const FItemInstance& ItemInstance, UItemInstanceViewModel* ItemInstanceViewModel) {}
+	virtual void OnItemChanged(UItemInstanceViewModel* ItemInstanceViewModel) {}
 
 	/**
-	 * Creates an ItemInstanceViewModel using the ItemInstanceViewModelClass.
+	 * Creates an ItemInstanceViewModel.
 	 */
 	UItemInstanceViewModel* CreateItemInstanceViewModel(const FItemInstance& ItemInstance);
 
@@ -81,7 +79,7 @@ protected:
 
 private:
 	UPROPERTY()
-	TWeakObjectPtr<UItemContainer> WeakItemContainer;
+	TObjectPtr<UItemContainer> ItemContainer;
 
 	/** The created ItemInstanceViewModels. */
 	UPROPERTY()
@@ -93,8 +91,14 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
 	FText ItemContainerName;
+	
+	/** Loads the ItemDefinition for all Items to get the ItemInstanceViewModelClass. */
+	void LoadItemDefinitions(const TArray<FItemInstance>& ItemInstances);
+	void ItemDefinitionsLoaded(TArray<FItemInstance> ItemInstances);
 
 	void Internal_OnItemAdded(const FItemInstance& ItemInstance);
 	void Internal_OnItemRemoved(const FItemInstance& ItemInstance);
 	void Internal_OnItemChanged(const FItemInstance& ItemInstance);
+	
+	friend class UInventoryUISubsystem;
 };

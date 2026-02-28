@@ -12,7 +12,7 @@ class UItemContainer;
  * Abstract class for all ItemContainerRule types. Provides accessor functions that can be used in child classes.
  * It is also expected that the rules are instanced by the ItemContainer.
  */
-UCLASS(Abstract, Blueprintable, NotBlueprintType, DefaultToInstanced, EditInlineNew)
+UCLASS(Abstract, Const, Blueprintable, NotBlueprintType, DefaultToInstanced, EditInlineNew, Within=ItemContainer)
 class INVENTORYSYSTEM_API UItemContainerRule : public UObject
 {
 	GENERATED_BODY()

@@ -58,13 +58,16 @@ class INVENTORYSYSTEM_API UItemDefinition : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-
 	UItemDefinition();
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 	virtual void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Primary Asset")
 	FPrimaryAssetType AssetType;
+	
+	/** User facing text of the item name */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition")
+	FText ItemName;
 
 	/** The tags that this item has.
 	 * @note You can search for items with specific tags through the AssetRegistry.

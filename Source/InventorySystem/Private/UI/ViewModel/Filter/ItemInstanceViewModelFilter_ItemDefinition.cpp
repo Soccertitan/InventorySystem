@@ -29,20 +29,13 @@ bool UItemInstanceViewModelFilter_ItemDefinition::DoesItemInstanceViewModelPassF
 		return false;
 	}
 
-	bool bFoundItemDefinition = false;
 	for (const TSoftObjectPtr<UItemDefinition> ItemDefinition : ItemDefinitions)
 	{
-		if (ItemInstanceViewModel->GetItem().Get<FItem>().GetItemDefinition() == ItemDefinition)
+		if (ItemInstanceViewModel->GetItemInstance().GetItem().Get<FItem>().GetItemDefinition() == ItemDefinition)
 		{
-			bFoundItemDefinition = true;
-			break;
+			return true;
 		}
 	}
 
-	if (!bFoundItemDefinition)
-	{
-		return false;
-	}
-
-	return true;
+	return false;
 }

@@ -6,7 +6,7 @@
 #include "UObject/Interface.h"
 #include "ItemViewModelInterface.generated.h"
 
-class UItemViewModel;
+class UItemInstanceViewModel;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -26,8 +26,8 @@ class INVENTORYSYSTEM_API IItemViewModelInterface
 public:
 
 	/**
-	 * @param ItemViewModel The ViewModel to assign to the widget.
+	 * @param ViewModel ViewModel to assign to the widget.
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Inventory System|View Model")
-	void SetItemViewModel(UItemViewModel* ItemViewModel);
+	void SetItemViewModel(UItemInstanceViewModel* ViewModel);
 };

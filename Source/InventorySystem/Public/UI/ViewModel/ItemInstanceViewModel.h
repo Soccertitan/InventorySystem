@@ -10,9 +10,9 @@
 #include "ItemInstanceViewModel.generated.h"
 
 
-class UItemViewModel;
+class UItemDefinitionViewModel;
 /**
- * A base implementation of the ItemInstanceViewModel. It will load the ItemDefinition for you and create an ItemViewModel, 
+ * A base implementation of the ItemInstanceViewModel. It will load the ItemDefinition for you,
  * ensure you update your project's AssetManager settings to include the ItemDefinition as discoverable.
  */
 UCLASS()
@@ -24,39 +24,45 @@ public:
 	UItemInstanceViewModel();
 	
 	/** Initializes the ViewModel with the specified ItemInstance. */
-	void SetItemInstance(const FItemInstance& ItemInstance);
+	void SetItemInstance(const FItemInstance& InItemInstance);
 	
-	UFUNCTION(BlueprintPure, FieldNotify)
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
 	FMVVMEventField OnViewModelInitialized() const { return{}; }
-	
+
 	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
-	FGuid GetGuid() const { return Guid; }
-	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
-	const TInstancedStruct<FItem>& GetItem() const { return Item; }
+	const FItemInstance& GetItemInstance() const { return ItemInstance; }
 	
-	UItemViewModel* GetItemViewModel() const { return ItemViewModel; }
-	
+	FText GetItemName() const { return ItemName; }
+	FText GetDescription() const { return Description; }
+	UTexture2D* GetIcon() const {return Icon;}
 	int32 GetQuantity() const {return Quantity;}
 	int32 GetMaxQuantity() const {return MaxQuantity;}
 
-	UFUNCTION(BlueprintPure, FieldNotify)
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
 	bool CanHaveMaxQuantityGreaterThanOne() const {return MaxQuantity > 1;}
-	UFUNCTION(BlueprintPure, FieldNotify)
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
 	bool IsAtMaxQuantity() const {return Quantity >= MaxQuantity;}
 	
-	UInventoryManagerComponent* GetInventoryManagerComponent() const { return InventoryManagerComponent; }
-	UItemContainer* GetItemContainer() const { return ItemContainer; }
+	/**
+	 * Creates a Widget and initializes it with this ViewModel. If the passed in Widget class is null, the function
+	 * will retrieve the value in the ItemFragment_UI ItemWidgetClass variable.
+	 * @param OwningPlayer The PlayerController that owns the widget.
+	 * @param WidgetClass The widget to create.
+	 * @return The newly created widget.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
+	UUserWidget* CreateItemDetailsWidget(APlayerController* OwningPlayer, 
+		UPARAM(meta = (MustImplement = "/Script/InventorySystem.ItemViewModelInterface")) TSubclassOf<UUserWidget> WidgetClass = nullptr);
 	
 	/** Loads the ItemDefinition using the cached copy of the item. */
 	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
 	void LoadItemDefinition();
 	
+	/** Resets the ItemDefinition handle freeing resources. */
+	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
+	void ReleaseItemDefinitionHandle();
+	
 protected:
-	
-	/** The ItemViewModel to create if the ItemDefinition does not have a valid entry. */
-	UPROPERTY(EditDefaultsOnly, NoClear)
-	TSubclassOf<UItemViewModel> ItemViewModelClass;
-	
 	/** Bundles to load when asynchronously loading the ItemDefinition. */
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	TArray<FName> Bundles;
@@ -69,13 +75,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	bool bLoadRecursive = true;
 	
+	/** If true, after the ItemDefinition is loaded and functions have had a chance to get data, will automatically unload the resource. */
+	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
+	bool bAutoUnloadItemDefinition = true;
+	
 	/** Called from SetItemInstance when a valid ItemInstance has been set. */
-	virtual void OnItemInstanceSet(const FItemInstance& ItemInstance){}
+	virtual void OnItemInstanceSet(){}
 
 	/** Called from SetItemInstance when a valid ItemInstance has been set. */
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemSet")
-	void K2_OnItemInstanceSet(const FItemInstance& ItemInstance);
-	
+	void K2_OnItemInstanceSet();
+
 	/** Called when the ItemDefinition is loaded. */
 	virtual void OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition){}
 
@@ -83,26 +93,25 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemDefinitionLoaded")
 	void K2_OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition);
 	
+	void SetItemName(FText InValue);
+	void SetDescription(FText InValue);
+	void SetIcon(UTexture2D* InValue);
 	void SetQuantity(int32 InValue);
 	void SetMaxQuantity(int32 InValue);
 	
 private:
+	/** Cached copy of the ItemInstance. */
+	UPROPERTY()
+	FItemInstance ItemInstance;
 	
-	/** Cached identifier of the ItemInstance. */
-	UPROPERTY()
-	FGuid Guid;
-	/** Cached copy of the Item. */
-	UPROPERTY()
-	TInstancedStruct<FItem> Item;
-	/** The owner where the item originated from. */
-	UPROPERTY()
-	TObjectPtr<UInventoryManagerComponent> InventoryManagerComponent;
-	/** The ItemContainer the item is 'stored' in. */
-	UPROPERTY()
-	TObjectPtr<UItemContainer> ItemContainer;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	FText ItemName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UItemViewModel> ItemViewModel;
+	FText Description;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UTexture2D> Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 Quantity = 0;
@@ -112,10 +121,7 @@ private:
 	
 	/** Cached handle for the ItemDefinition. */
 	TSharedPtr<FStreamableHandle> ItemDefinitionStreamableHandle;
-
-	/** Creates the ItemViewModel after the ItemDefinition has loaded. */
-	void CreateItemViewModel(const UItemDefinition* ItemDefinition);
 	
 	/** Called when the ItemDefinition is loaded. */
-	void Internal_OnItemDefinitionLoaded(TSoftObjectPtr<UItemDefinition> ItemDefinition);
+	void Internal_OnItemDefinitionLoaded();
 };

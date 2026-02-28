@@ -27,10 +27,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Rule")
 	virtual int32 GetItemContainerLimit(const TInstancedStruct<FItem>& Item) const;
 
-	/** The maximum number of unique ItemInstances allowed across all ItemContainers. */
-	UFUNCTION(BlueprintPure, Category = "Inventory System|Rule")
-	virtual int32 GetInventoryManagerLimit(const TInstancedStruct<FItem>& Item) const;
-
 protected:
 	/** The maximum quantity of this item allowed in a single ItemInstance. */
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "GetItemLimit")
@@ -40,12 +36,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "GetItemContainerLimit")
 	int32 K2_GetItemContainerLimit(const TInstancedStruct<FItem>& Item) const;
 
-	/** The maximum number of unique ItemInstances allowed across all ItemContainers. */
-	UFUNCTION(BlueprintImplementableEvent, DisplayName = "GetInventoryManagerLimit")
-	int32 K2_GetInventoryManagerLimit(const TInstancedStruct<FItem>& Item) const;
-
 private:
 	uint8 bHasGetItemQuantityLimit : 1;
 	uint8 bHasGetItemContainerLimit : 1;
-	uint8 bHasGetInventoryManagerLimit : 1;
 };

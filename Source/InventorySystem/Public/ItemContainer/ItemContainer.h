@@ -22,7 +22,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FItemContainerItemInstanceSignature, const F
  * A basic implementation for an ItemContainer that can hold any number of ItemInstances.
  * Designed to be subclassed to define how items are added and managed in the ItemContainer.
  */
-UCLASS(Blueprintable, BlueprintType)
+UCLASS(Blueprintable, BlueprintType, Within=InventoryManagerComponent)
 class INVENTORYSYSTEM_API UItemContainer : public UObject
 {
 	GENERATED_BODY()
@@ -263,7 +263,7 @@ public:
 	virtual int32 GetItemQuantityLimit(const TInstancedStruct<FItem>& Item) const;
 
 	/**
-	 * Will check the ItemContainerRules for ItemContainer and InventoryManager and return the most restrictive.
+	 * Will check the ItemContainerRules of the ItemContainer and return the most restrictive.
 	 * @param Item The Item to check.
 	 * @return Returns the maximum number of unique item instances allowed in the ItemContainer.
 	 */
@@ -271,7 +271,7 @@ public:
 	virtual int32 GetItemStackQuantityLimit(const TInstancedStruct<FItem>& Item) const;
 
 	/**
-	 * Iterates through all Items from the owning ItemManager for items with a matching ItemDefinition.
+	 * Iterates through all items in the container for items with a matching ItemDefinition.
 	 * GetItemStackQuantityLimit - ItemStackCount.
 	 * @param Item The Item to check.
 	 * @return The number of remaining item stacks that are allowed to be added to the ItemContainer.

@@ -50,6 +50,16 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	/** Holds the previous value of the item during a broadcast event. */
 	const TInstancedStruct<FItem>& GetPreReplicatedItem() const;
 	int32 GetQuantity() const;
+	
+	friend bool operator==(const FItemInstance& X, const FItemInstance& Y)
+	{
+		return X.GetGuid() == Y.GetGuid();
+	}
+	
+	friend bool operator!=(const FItemInstance& X, const FItemInstance& Y)
+	{
+		return X.GetGuid() != Y.GetGuid();
+	}
 
 private:
 

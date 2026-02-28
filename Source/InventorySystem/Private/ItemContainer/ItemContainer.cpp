@@ -231,13 +231,7 @@ TArray<FItemInstance> UItemContainer::K2_FindMatchingItems(const TInstancedStruc
 
 bool UItemContainer::CanAddItem(const TInstancedStruct<FItem>& Item, FGameplayTag& OutError) const
 {
-	if (!Item.IsValid())
-	{
-		OutError = FInventoryGameplayTags::Get().ItemAddResult_Error_InvalidItem;
-		return false;
-	}
-
-	if (Item.GetPtr<FItem>()->GetItemDefinition().IsNull())
+	if (!Item.IsValid() || Item.GetPtr<FItem>()->GetItemDefinition().IsNull())
 	{
 		OutError = FInventoryGameplayTags::Get().ItemAddResult_Error_InvalidItem;
 		return false;
@@ -380,16 +374,14 @@ int32 UItemContainer::GetItemStackQuantityLimit(const TInstancedStruct<FItem>& I
 			if (Rule)
 			{
 				const int32 ItemContainerLimit = Rule->GetItemContainerLimit(Item);
-				const int32 InventoryManagerLimit = Rule->GetInventoryManagerLimit(Item);
 				Result = FMath::Min(Result, ItemContainerLimit);
-				Result = FMath::Min(Result, InventoryManagerLimit);
 			}
 		}
 
-		if (const FItemFragment_QuantityLimit* Fragment =
-			UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)->FindFragmentByType<FItemFragment_QuantityLimit>())
+		if (const FItemFragment_QuantityLimit* Fragment = UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)
+			->FindFragmentByType<FItemFragment_QuantityLimit>())
 		{
-			Result = FMath::Min(Result, Fragment->ItemContainer.GetMaxQuantity(), Fragment->InventoryManager.GetMaxQuantity());
+			Result = FMath::Min(Result, Fragment->ItemContainer.GetMaxQuantity());
 		}
 		return FMath::Max(Result, 0);
 	}
@@ -399,7 +391,7 @@ int32 UItemContainer::GetItemStackQuantityLimit(const TInstancedStruct<FItem>& I
 int32 UItemContainer::GetRemainingItemStackCapacity(const TInstancedStruct<FItem>& Item) const
 {
 	const int32 StackQuantityLimit = FMath::Min(GetItemStackQuantityLimit(Item), GetRemainingCapacity());
-	const int32 ItemStackCount = GetInventoryManagerComponent()->FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)).Num();
+	const int32 ItemStackCount = FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)).Num();
 
 	return FMath::Max(StackQuantityLimit - ItemStackCount, 0);
 }

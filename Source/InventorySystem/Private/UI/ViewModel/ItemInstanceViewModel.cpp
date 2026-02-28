@@ -3,68 +3,113 @@
 
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
+#include "InventoryBlueprintFunctionLibrary.h"
+#include "InventoryManagerComponent.h"
+#include "InventorySystem.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
 #include "Item/ItemDefinition.h"
 #include "Item/Fragment/ItemFragment_UI.h"
 #include "ItemContainer/ItemContainer.h"
-#include "UI/ViewModel/ItemViewModel.h"
+#include "UI/ItemViewModelInterface.h"
 
 UItemInstanceViewModel::UItemInstanceViewModel()
 {
 	Bundles.Add("UI");
-	ItemViewModelClass = UItemViewModel::StaticClass();
 }
 
-void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
+void UItemInstanceViewModel::SetItemInstance(const FItemInstance& InItemInstance)
 {
-	if (ItemInstance.IsValid())
+	if (InItemInstance.IsValid())
 	{
 		bool bShouldLoadItemDefinition = false;
-		if (Guid != ItemInstance.GetGuid())
+		if (ItemInstance != InItemInstance)
 		{
 			ItemDefinitionStreamableHandle.Reset();
 			bShouldLoadItemDefinition = true;
 		}
 
-		Guid = ItemInstance.GetGuid();
-		Item = ItemInstance.GetItem();
-		SetQuantity(ItemInstance.GetQuantity());
-		ItemContainer = ItemInstance.GetItemContainer();
-		InventoryManagerComponent = ItemContainer->GetInventoryManagerComponent();
+		ItemInstance = InItemInstance;
 		
-		OnItemInstanceSet(ItemInstance);
-		K2_OnItemInstanceSet(ItemInstance);
+		SetQuantity(ItemInstance.GetQuantity());
+		OnItemInstanceSet();
+		K2_OnItemInstanceSet();
 
 		if (bShouldLoadItemDefinition && bAutoLoadItemDefinition)
 		{
 			LoadItemDefinition();
 		}
-		else if (ItemViewModel)
+	}
+}
+
+UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* OwningPlayer, TSubclassOf<UUserWidget> WidgetClass)
+{
+	if (!WidgetClass)
+	{
+		if (const UItemDefinition* ItemDefinition = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem()))
 		{
-			ItemViewModel->SetItem(Item);
+			if (const FItemFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
+			{
+				WidgetClass = Fragment->ItemInstanceViewModelClass.Get();
+				if (!WidgetClass)
+				{
+					UAssetManager::Get().LoadAssetList({Fragment->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+					WidgetClass = Fragment->ItemInstanceViewModelClass.Get();
+				}
+			}
 		}
 	}
-	else
+
+	if (WidgetClass)
 	{
-		ItemDefinitionStreamableHandle.Reset();
+		UUserWidget* NewWidget = CreateWidget<UUserWidget>(OwningPlayer, WidgetClass);
+		if (NewWidget->Implements<UItemViewModelInterface>())
+		{
+			IItemViewModelInterface::Execute_SetItemViewModel(NewWidget, this);
+		}
+		else
+		{
+			UE_LOG(LogInventorySystem, Error, TEXT("[%s] does not implement ItemViewModelInterface."), *GetNameSafe(NewWidget));
+		}
+		return NewWidget;
 	}
+	return nullptr;
 }
 
 void UItemInstanceViewModel::LoadItemDefinition()
 {
-	if (const FItem* ItemPtr = Item.GetPtr<FItem>())
+	if (const FItem* ItemPtr = ItemInstance.GetItem().GetPtr<FItem>())
 	{
 		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(
 		   ItemPtr->GetItemDefinition().ToSoftObjectPath());
 	
 		if (AssetId.IsValid())
 		{
-			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this,
-				&UItemInstanceViewModel::Internal_OnItemDefinitionLoaded, ItemPtr->GetItemDefinition());
+			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemInstanceViewModel::Internal_OnItemDefinitionLoaded);
 			ItemDefinitionStreamableHandle = UAssetManager::Get().PreloadPrimaryAssets(
 			   {AssetId}, Bundles, bLoadRecursive, Delegate);
 		}
 	}
+}
+
+void UItemInstanceViewModel::ReleaseItemDefinitionHandle()
+{
+	ItemDefinitionStreamableHandle.Reset();
+}
+
+void UItemInstanceViewModel::SetItemName(FText InValue)
+{
+	UE_MVVM_SET_PROPERTY_VALUE(ItemName, InValue);
+}
+
+void UItemInstanceViewModel::SetDescription(FText InValue)
+{
+	UE_MVVM_SET_PROPERTY_VALUE(Description, InValue);
+}
+
+void UItemInstanceViewModel::SetIcon(UTexture2D* InValue)
+{
+	UE_MVVM_SET_PROPERTY_VALUE(Icon, InValue);
 }
 
 void UItemInstanceViewModel::SetQuantity(int32 InValue)
@@ -80,36 +125,25 @@ void UItemInstanceViewModel::SetMaxQuantity(int32 InValue)
 	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(CanHaveMaxQuantityGreaterThanOne);
 }
 
-void UItemInstanceViewModel::CreateItemViewModel(const UItemDefinition* ItemDefinition)
+void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
 {
-	const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>();
-
-	TSubclassOf<UItemViewModel> ViewModelClass = ItemViewModelClass;
-	if (UIFrag && !UIFrag->ItemViewModelClass.IsNull())
+	if (const UItemDefinition* ItemDefinition = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem()))
 	{
-		if (!UIFrag->ItemViewModelClass.Get())
+		SetItemName(ItemDefinition->ItemName);
+		if (const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
 		{
-			UAssetManager::Get().LoadAssetList({
-			UIFrag->ItemViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+			SetDescription(UIFrag->Description);
+			SetIcon(UIFrag->Icon.Get());
 		}
-		ViewModelClass = UIFrag->ItemViewModelClass.Get();
-	}
-
-	UItemViewModel* NewVM = NewObject<UItemViewModel>(this, ViewModelClass);
-	NewVM->SetItem(Item);
-	UE_MVVM_SET_PROPERTY_VALUE(ItemViewModel, NewVM);
-}
-
-void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded(TSoftObjectPtr<UItemDefinition> ItemDefinition)
-{
-	if (UItemDefinition* Definition = ItemDefinition.Get())
-	{
-		CreateItemViewModel(Definition);
-		SetMaxQuantity(GetItemContainer()->GetItemQuantityLimit(GetItem()));
-		OnItemDefinitionLoaded(Definition);
-		K2_OnItemDefinitionLoaded(Definition);
+		SetMaxQuantity(ItemInstance.GetItemContainer()->GetItemQuantityLimit(ItemInstance.GetItem()));
+		OnItemDefinitionLoaded(ItemDefinition);
+		K2_OnItemDefinitionLoaded(ItemDefinition);
 		
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(OnViewModelInitialized);
 	}
-	ItemDefinitionStreamableHandle.Reset();
+	
+	if (bAutoUnloadItemDefinition)
+	{
+		ItemDefinitionStreamableHandle.Reset();
+	}
 }

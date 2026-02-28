@@ -29,21 +29,17 @@ bool UItemInstanceViewModelFilter_TagStats::DoesItemInstanceViewModelPassFilter(
 		return false;
 	}
 
-	if (const FItemInstance* ItemInstancePtr = ItemInstanceViewModel->GetItemContainer()->FindItemByGuid(ItemInstanceViewModel->GetGuid()))
+	if (const FItem* ItemPtr = ItemInstanceViewModel->GetItemInstance().GetItem().GetPtr<FItem>())
 	{
-		if (const FItem* ItemPtr = ItemInstancePtr->GetItem().GetPtr<FItem>())
+		for (const auto& Requirement : RequiredTagStats.GetItems())
 		{
-			for (const auto& Requirement : RequiredTagStats.GetItems())
+			int32 CurrentValue = ItemPtr->GameplayTagStackContainer.GetStackCount(Requirement.GetTag());
+			if (CurrentValue <= Requirement.GetCount())
 			{
-				int32 CurrentValue = ItemPtr->GameplayTagStackContainer.GetStackCount(Requirement.GetTag());
-				if (CurrentValue <= Requirement.GetCount())
-				{
-					return false;
-				}
+				return false;
 			}
-
-			return true;
 		}
+		return true;
 	}
 
 	return false;
