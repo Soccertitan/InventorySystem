@@ -126,6 +126,4 @@ private:
 	
 	/** Called when the ItemDefinition is loaded. */
 	void Internal_OnItemDefinitionLoaded();
-	
-	void OnItemInstanceChanged(const FItemInstance& InItemInstance);
 };

@@ -28,3 +28,13 @@ UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemI
 	}
 	return nullptr;
 }
+
+bool UInventoryViewModelBlueprintFunctionLibrary::DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item)
+{
+	FAssetData AssetData;
+	bool Result;
+	FPrimaryAssetId AssetId = Item.Get<FItem>().GetItemDefinition()->GetPrimaryAssetId();
+	UAssetManager::Get().GetPrimaryAssetData(AssetId, AssetData);
+	AssetData.GetTagValue("ItemFragment_UI", Result);
+	return Result;
+}

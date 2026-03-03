@@ -31,12 +31,14 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 		{
 			GetItemContainer()->OnItemAddedDelegate.RemoveAll(this);
 			GetItemContainer()->OnItemRemovedDelegate.RemoveAll(this);
+			GetItemContainer()->OnItemChangedDelegate.RemoveAll(this);
 		}
 		
 		ItemContainer = InItemContainer;
 		
 		InItemContainer->OnItemAddedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemAdded);
 		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemRemoved);
+		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemChanged);
 
 		ItemInstanceViewModels.Empty(GetItemContainer()->GetItems().Num());
 		LoadItemDefinitions(GetItemContainer()->GetItems());
@@ -129,12 +131,19 @@ void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemIn
 	}
 }
 
-bool UItemContainerViewModel::DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item)
+void UItemContainerViewModel::Internal_OnItemChanged(const FItemInstance& ItemInstance)
 {
-	FAssetData AssetData;
-	bool Result;
-	FPrimaryAssetId AssetId = Item.Get<FItem>().GetItemDefinition()->GetPrimaryAssetId();
-	UAssetManager::Get().GetPrimaryAssetData(AssetId, AssetData);
-	AssetData.GetTagValue("ItemFragment_UI", Result);
-	return Result;
+	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
+	{
+		if (ItemInstanceViewModel->GetItemInstance() == ItemInstance)
+		{
+			ItemInstanceViewModel->SetItemInstance(ItemInstance);
+			OnItemChanged(ItemInstanceViewModel);
+
+			ItemInstanceViewModelBuffer = ItemInstanceViewModel;
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetChangedItemInstanceViewModel);
+			ItemInstanceViewModelBuffer = nullptr;
+			break;
+		}
+	}
 }
