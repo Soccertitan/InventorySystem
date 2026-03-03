@@ -11,16 +11,19 @@
 
 UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemInstanceViewModel(UObject* Owner, const FItemInstance& ItemInstance)
 {
-	if (Owner && ItemInstance.IsValid())
+	if (Owner)
 	{
 		TSubclassOf<UItemInstanceViewModel> ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
-		if (const FItemFragment_UI* UIFrag = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem())->FindFragmentByType<FItemFragment_UI>())
+		if (ItemInstance.IsValid())
 		{
-			if (!UIFrag->ItemInstanceViewModelClass.Get())
+			if (const FItemFragment_UI* UIFrag = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem())->FindFragmentByType<FItemFragment_UI>())
 			{
-				UAssetManager::Get().LoadAssetList({UIFrag->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+				if (!UIFrag->ItemInstanceViewModelClass.Get())
+				{
+					UAssetManager::Get().LoadAssetList({UIFrag->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+				}
+				ItemInstanceViewModelClass = UIFrag->ItemInstanceViewModelClass.Get() ? UIFrag->ItemInstanceViewModelClass.Get() : UItemInstanceViewModel::StaticClass();
 			}
-			ItemInstanceViewModelClass = UIFrag->ItemInstanceViewModelClass.Get() ? UIFrag->ItemInstanceViewModelClass.Get() : UItemInstanceViewModel::StaticClass();
 		}
 		UItemInstanceViewModel* NewVM = NewObject<UItemInstanceViewModel>(Owner, ItemInstanceViewModelClass);
 		NewVM->SetItemInstance(ItemInstance);
