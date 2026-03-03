@@ -134,19 +134,19 @@ FItemInstance UInventoryManagerComponent::K2_FindItemByGuid(FGuid Guid) const
 	return FItemInstance();
 }
 
-TArray<FItemInstance*> UInventoryManagerComponent::FindItemsByDefinition(const UItemDefinition* ItemDefinition) const
+void UInventoryManagerComponent::FindItemsByDefinition(const UItemDefinition* ItemDefinition, TArray<FItemInstance*>& Result) const
 {
-	TArray<FItemInstance*> Result;
+	Result.Empty();
 
 	if (ItemDefinition)
 	{
 		for (const FItemContainerInstance& Entry : InventoryContainerInstanceContainer.GetItems())
 		{
-			Result.Append(Entry.GetItemContainer()->FindItemsByDefinition(ItemDefinition));
+			TArray<FItemInstance*> ItemInstances;
+			Entry.GetItemContainer()->FindItemsByDefinition(ItemDefinition, ItemInstances);
+			Result.Append(ItemInstances);
 		}
 	}
-	return Result;
-	
 }
 
 TArray<FItemInstance> UInventoryManagerComponent::K2_FindItemsByDefinition(const UItemDefinition* ItemDefinition) const
@@ -276,7 +276,10 @@ int32 UInventoryManagerComponent::ConsumeItemsByDefinition(const UItemDefinition
 {
 	int32 Result = 0;
 	int32 QuantityRemaining = QuantityToConsume;
-	for (FItemInstance*& ItemInstance : FindItemsByDefinition(ItemDefinition))
+	
+	TArray<FItemInstance*> ItemInstances;
+	FindItemsByDefinition(ItemDefinition, ItemInstances);
+	for (FItemInstance*& ItemInstance : ItemInstances)
 	{
 		Result += ConsumeItem(ItemInstance, QuantityRemaining);
 		QuantityRemaining = FMath::Max(QuantityToConsume - Result, 0);
@@ -295,7 +298,10 @@ int32 UInventoryManagerComponent::ConsumeItemsByDefinitionInContainer(const UIte
 	if (ItemContainer)
 	{
 		int32 QuantityRemaining = QuantityToConsume;
-		for (FItemInstance*& ItemInstance : ItemContainer->FindItemsByDefinition(ItemDefinition))
+		
+		TArray<FItemInstance*> ItemInstances;
+		FindItemsByDefinition(ItemDefinition, ItemInstances);
+		for (FItemInstance*& ItemInstance : ItemInstances)
 		{
 			Result += ConsumeItem(ItemInstance, QuantityRemaining);
 			QuantityRemaining = FMath::Max(QuantityToConsume - Result, 0);

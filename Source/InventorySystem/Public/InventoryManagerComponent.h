@@ -99,9 +99,9 @@ public:
 
 	/**
 	 * @param ItemDefinition The ItemDefinition to check.
-	 * @return A pointer of all items with matching item definitions.
+	 * @param Result A pointer of all items with matching item definitions.
 	 */
-	TArray<FItemInstance*> FindItemsByDefinition(const UItemDefinition* ItemDefinition) const;
+	void FindItemsByDefinition(const UItemDefinition* ItemDefinition, TArray<FItemInstance*>& Result) const;
 
 	/**
 	 * @param ItemDefinition The ItemDef to check.

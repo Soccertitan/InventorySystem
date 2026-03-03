@@ -139,9 +139,9 @@ FItemInstance UItemContainer::K2_FindItemByDefinition(const UItemDefinition* Ite
 	return FItemInstance();
 }
 
-TArray<FItemInstance*> UItemContainer::FindItemsByDefinition(const UItemDefinition* ItemDefinition) const
+void UItemContainer::FindItemsByDefinition(const UItemDefinition* ItemDefinition, TArray<FItemInstance*>& Result) const
 {
-	TArray<FItemInstance*> Items;
+	Result.Empty();
 
 	if (ItemDefinition)
 	{
@@ -149,11 +149,10 @@ TArray<FItemInstance*> UItemContainer::FindItemsByDefinition(const UItemDefiniti
 		{
 			if (ItemInstance.Item.GetPtr<FItem>()->GetItemDefinition() == ItemDefinition)
 			{
-				Items.Add(const_cast<FItemInstance*>(&ItemInstance));
+				Result.Add(const_cast<FItemInstance*>(&ItemInstance));
 			}
 		}
 	}
-	return Items;
 }
 
 TArray<FItemInstance> UItemContainer::K2_FindItemsByDefinition(const UItemDefinition* ItemDefinition) const
@@ -197,9 +196,9 @@ FItemInstance UItemContainer::K2_FindMatchingItem( const TInstancedStruct<FItem>
 	return FItemInstance();
 }
 
-TArray<FItemInstance*> UItemContainer::FindMatchingItems(const TInstancedStruct<FItem>& Item) const
+void UItemContainer::FindMatchingItems(const TInstancedStruct<FItem>& Item, TArray<FItemInstance*>& Result) const
 {
-	TArray<FItemInstance*> Result;
+	Result.Empty();
 	if (Item.IsValid())
 	{
 		for (const FItemInstance& ItemInstance : ItemInstanceContainer.GetItems())
@@ -210,7 +209,6 @@ TArray<FItemInstance*> UItemContainer::FindMatchingItems(const TInstancedStruct<
 			}
 		}
 	}
-	return Result;
 }
 
 TArray<FItemInstance> UItemContainer::K2_FindMatchingItems(const TInstancedStruct<FItem>& Item) const
@@ -332,7 +330,9 @@ int32 UItemContainer::GetTotalItemQuantity(const TInstancedStruct<FItem>& Item) 
 
 	int32 Result = 0;
 
-	for (const FItemInstance* Entry : FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)))
+	TArray<FItemInstance*> ItemInstances;
+	FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item), ItemInstances);
+	for (const FItemInstance* Entry : ItemInstances)
 	{
 		Result = Result + Entry->GetQuantity();
 	}
@@ -391,7 +391,9 @@ int32 UItemContainer::GetItemStackQuantityLimit(const TInstancedStruct<FItem>& I
 int32 UItemContainer::GetRemainingItemStackCapacity(const TInstancedStruct<FItem>& Item) const
 {
 	const int32 StackQuantityLimit = FMath::Min(GetItemStackQuantityLimit(Item), GetRemainingCapacity());
-	const int32 ItemStackCount = FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)).Num();
+	TArray<FItemInstance*> ItemInstances;
+	FindItemsByDefinition(UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item), ItemInstances);
+	const int32 ItemStackCount = ItemInstances.Num();
 
 	return FMath::Max(StackQuantityLimit - ItemStackCount, 0);
 }
@@ -428,45 +430,34 @@ void UItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddIte
 	//----------------------------------------------------------------------------------------------
 	const int32 ItemQuantityLimit = GetItemQuantityLimit(Item);
 	const int32 RemainingItemStackCapacity = GetRemainingItemStackCapacity(Item);
-	int32 MaxItemQuantityToAdd = MAX_int32;
-	if (!FMath::MultiplyAndCheckForOverflow(ItemQuantityLimit, RemainingItemStackCapacity, MaxItemQuantityToAdd))
-	{
-		MaxItemQuantityToAdd = MAX_int32;
-	}
-	MaxItemQuantityToAdd -= GetTotalItemQuantity(Item);
-	int32 RemainingQuantityToAdd = FMath::Min(MaxItemQuantityToAdd, AddItemPlan.GetAmountToGive());
+	int32 RemainingQuantityToAdd = AddItemPlan.GetAmountToGive();
 
 	//----------------------------------------------------------------------------------------------
 	// 2. If auto stacking gather a list of all matching items in the list. We only try to auto
 	// stack if the ItemStackMaxQuantity is greater than 1 and auto stacking is enabled.
 	//----------------------------------------------------------------------------------------------
-	TArray<FItemInstance*> MatchingItems = TArray<FItemInstance*>();
+	TArray<FItemInstance*> MatchingItemInstances = TArray<FItemInstance*>();
 	if (bAutoStack && ItemQuantityLimit > 1)
 	{
-		MatchingItems = FindMatchingItems(Item);
+		FindMatchingItems(Item, MatchingItemInstances);
 	}
-	
+
 	//----------------------------------------------------------------------------------------------
 	// 3. We add item quantities to existing items that are not at their max capacity for a single stack.
 	//----------------------------------------------------------------------------------------------
-	for (FItemInstance*& Match : MatchingItems)
+	for (FItemInstance*& ItemInstance : MatchingItemInstances)
 	{
+		if (ItemInstance->GetQuantity() < ItemQuantityLimit)
+		{
+			const int32 QuantityToAdd = FMath::Min(RemainingQuantityToAdd, ItemQuantityLimit - ItemInstance->GetQuantity());
+			RemainingQuantityToAdd = RemainingQuantityToAdd - QuantityToAdd;
+			AddItemPlan.AddEntry(FAddItemPlanEntry(ItemInstance, QuantityToAdd));
+		}
+		
 		if (RemainingQuantityToAdd <= 0)
 		{
-			break;
+			return;
 		}
-
-		if (Match->GetQuantity() < ItemQuantityLimit)
-		{
-			const int32 QuantityToAdd = FMath::Min(RemainingQuantityToAdd, ItemQuantityLimit - Match->GetQuantity());
-			RemainingQuantityToAdd = RemainingQuantityToAdd - QuantityToAdd;
-			AddItemPlan.AddEntry(FAddItemPlanEntry(Match, QuantityToAdd));
-		}
-	}
-
-	if (RemainingQuantityToAdd <= 0)
-	{
-		return;
 	}
 
 	//----------------------------------------------------------------------------------------------

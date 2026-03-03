@@ -42,7 +42,7 @@ protected:
 
 	/** Automatically combine and stack items that are added to the ItemContainer. */
 	UPROPERTY(EditDefaultsOnly, Category = "Item Container")
-	bool bAutoStack = false;
+	bool bAutoStack = true;
 
 	/** Tags the ItemContainer has. */
 	UPROPERTY(EditDefaultsOnly, Category = "Item Container")
@@ -168,7 +168,7 @@ public:
 	/**
 	 * @return All items in the container by ItemDefinition.
 	 */
-	TArray<FItemInstance*> FindItemsByDefinition(const UItemDefinition* ItemDefinition) const;
+	void FindItemsByDefinition(const UItemDefinition* ItemDefinition, TArray<FItemInstance*>& Result) const;
 
 	/**
 	 * @return All items in the container by ItemDefinition.
@@ -192,9 +192,9 @@ public:
 	/**
 	 * @note See FItem::IsMatching
 	 * @param Item The item to check against.
-	 * @return Pointers to all matching items.
+	 * @param Result Pointers to all matching items.
 	 */
-	TArray<FItemInstance*> FindMatchingItems(const TInstancedStruct<FItem>& Item) const;
+	void FindMatchingItems(const TInstancedStruct<FItem>& Item, TArray<FItemInstance*>& Result) const;
 
 	/**
 	 * @note See FItem::IsMatching

@@ -67,13 +67,6 @@ protected:
 	virtual void OnItemAdded(UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is removed from the ItemContainer. */
 	virtual void OnItemRemoved(UItemInstanceViewModel* ItemInstanceViewModel) {}
-	/** Called whenever an item is changed in the ItemContainer. */
-	virtual void OnItemChanged(UItemInstanceViewModel* ItemInstanceViewModel) {}
-
-	/**
-	 * Creates an ItemInstanceViewModel.
-	 */
-	UItemInstanceViewModel* CreateItemInstanceViewModel(const FItemInstance& ItemInstance);
 
 	static bool DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item);
 
@@ -98,7 +91,6 @@ private:
 
 	void Internal_OnItemAdded(const FItemInstance& ItemInstance);
 	void Internal_OnItemRemoved(const FItemInstance& ItemInstance);
-	void Internal_OnItemChanged(const FItemInstance& ItemInstance);
 	
 	friend class UInventoryUISubsystem;
 };

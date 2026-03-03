@@ -11,6 +11,7 @@
 
 
 class UItemDefinitionViewModel;
+
 /**
  * A base implementation of the ItemInstanceViewModel. It will load the ItemDefinition for you,
  * ensure you update your project's AssetManager settings to include the ItemDefinition as discoverable.
@@ -23,7 +24,7 @@ class INVENTORYSYSTEM_API UItemInstanceViewModel : public UMVVMViewModelBase
 public:
 	UItemInstanceViewModel();
 	
-	/** Initializes the ViewModel with the specified ItemInstance. */
+	/** Updates the ViewModel with the specified ItemInstance. */
 	void SetItemInstance(const FItemInstance& InItemInstance);
 	
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
@@ -119,9 +120,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 MaxQuantity = 0;
 	
+	FDelegateHandle OnItemInstanceChangedHandle;
 	/** Cached handle for the ItemDefinition. */
 	TSharedPtr<FStreamableHandle> ItemDefinitionStreamableHandle;
 	
 	/** Called when the ItemDefinition is loaded. */
 	void Internal_OnItemDefinitionLoaded();
+	
+	void OnItemInstanceChanged(const FItemInstance& InItemInstance);
 };

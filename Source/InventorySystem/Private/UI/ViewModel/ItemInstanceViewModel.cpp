@@ -27,6 +27,12 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& InItemInstance
 		{
 			ItemDefinitionStreamableHandle.Reset();
 			bShouldLoadItemDefinition = true;
+			
+			if (ItemInstance.GetItemContainer())
+			{
+				ItemInstance.GetItemContainer()->OnItemChangedDelegate.Remove(OnItemInstanceChangedHandle);
+			}
+			OnItemInstanceChangedHandle = InItemInstance.GetItemContainer()->OnItemChangedDelegate.AddUObject(this, &UItemInstanceViewModel::OnItemInstanceChanged);
 		}
 
 		ItemInstance = InItemInstance;
@@ -135,7 +141,14 @@ void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
 			SetDescription(UIFrag->Description);
 			SetIcon(UIFrag->Icon.Get());
 		}
-		SetMaxQuantity(ItemInstance.GetItemContainer()->GetItemQuantityLimit(ItemInstance.GetItem()));
+		if (ItemInstance.GetItemContainer())
+		{
+			SetMaxQuantity(ItemInstance.GetItemContainer()->GetItemQuantityLimit(ItemInstance.GetItem()));
+		}
+		else
+		{
+			SetMaxQuantity(0);
+		}
 		OnItemDefinitionLoaded(ItemDefinition);
 		K2_OnItemDefinitionLoaded(ItemDefinition);
 		
@@ -145,5 +158,13 @@ void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
 	if (bAutoUnloadItemDefinition)
 	{
 		ItemDefinitionStreamableHandle.Reset();
+	}
+}
+
+void UItemInstanceViewModel::OnItemInstanceChanged(const FItemInstance& InItemInstance)
+{
+	if (InItemInstance == ItemInstance)
+	{
+		SetItemInstance(InItemInstance);
 	}
 }
