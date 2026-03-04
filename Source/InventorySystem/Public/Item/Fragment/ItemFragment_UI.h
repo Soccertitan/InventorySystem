@@ -19,11 +19,11 @@ struct FItemFragment_UI : public FItemFragment
 	FItemFragment_UI();
 
 	/** User facing description of the item */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (MultiLine))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (MultiLine=true))
 	FText Description;
 
 	/** The user facing icon of the item. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (AssetBundles = "UI"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI")
 	TSoftObjectPtr<UTexture2D> Icon;
 
 	/** The ItemInstanceViewModel to create. */

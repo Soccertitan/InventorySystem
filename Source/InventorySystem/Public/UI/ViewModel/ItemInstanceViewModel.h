@@ -35,7 +35,7 @@ public:
 	
 	FText GetItemName() const { return ItemName; }
 	FText GetDescription() const { return Description; }
-	UTexture2D* GetIcon() const {return Icon;}
+	TSoftObjectPtr<UTexture2D> GetIcon() const {return Icon;}
 	int32 GetQuantity() const {return Quantity;}
 	int32 GetMaxQuantity() const {return MaxQuantity;}
 
@@ -96,7 +96,7 @@ protected:
 	
 	void SetItemName(FText InValue);
 	void SetDescription(FText InValue);
-	void SetIcon(UTexture2D* InValue);
+	void SetIcon(const TSoftObjectPtr<UTexture2D>& InValue);
 	void SetQuantity(int32 InValue);
 	void SetMaxQuantity(int32 InValue);
 	
@@ -112,7 +112,7 @@ private:
 	FText Description;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UTexture2D> Icon;
+	TSoftObjectPtr<UTexture2D> Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 Quantity = 0;

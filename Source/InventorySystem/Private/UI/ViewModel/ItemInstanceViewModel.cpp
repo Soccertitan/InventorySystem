@@ -107,7 +107,7 @@ void UItemInstanceViewModel::SetDescription(FText InValue)
 	UE_MVVM_SET_PROPERTY_VALUE(Description, InValue);
 }
 
-void UItemInstanceViewModel::SetIcon(UTexture2D* InValue)
+void UItemInstanceViewModel::SetIcon(const TSoftObjectPtr<UTexture2D>& InValue)
 {
 	UE_MVVM_SET_PROPERTY_VALUE(Icon, InValue);
 }
@@ -133,7 +133,7 @@ void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
 		if (const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
 		{
 			SetDescription(UIFrag->Description);
-			SetIcon(UIFrag->Icon.Get());
+			SetIcon(UIFrag->Icon);
 		}
 		if (ItemInstance.GetItemContainer())
 		{
