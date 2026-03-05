@@ -42,11 +42,11 @@ public:
 	UItemContainerViewModelResolver_ItemContainerTag();
 
 	/** The InventoryContainer provider to use. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ViewModelResolver")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Viewmodel")
 	TSubclassOf<UItemContainerProvider> Provider;
 
 	/** The ItemContainer tag to search for. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ViewModelResolver", meta = (Categories = "InventoryContainer"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Viewmodel", meta = (Categories = "InventoryContainer"))
 	FGameplayTag ItemContainerTag;
 
 	virtual UObject* CreateInstance(const UClass* ExpectedType, const UUserWidget* UserWidget, const UMVVMView* View) const override;

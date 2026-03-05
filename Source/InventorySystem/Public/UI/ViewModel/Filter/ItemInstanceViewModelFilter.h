@@ -24,7 +24,7 @@ public:
 	 * @param Context A context that can contain any information the Filter requires to do its job.
 	 * @param ItemInstanceViewModels The ItemViewModels to filter.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|Filter", BlueprintPure = false)
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|Filter", BlueprintPure = false)
 	void FilterItemInstanceViewModels(const UObject* Context, UPARAM(ref) TArray<UItemInstanceViewModel*>& ItemInstanceViewModels) const;
 
 protected:
@@ -42,7 +42,7 @@ protected:
 	 * @param ItemInstanceViewModels The ItemInstanceViewModels that may be filtered.
 	 * @return True, if the requirements are met.
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Inventory System|Filter", meta = (DisplayName = "ShouldBeginFilter"))
+	UFUNCTION(BlueprintImplementableEvent, Category = "Viewmodel|Filter", meta = (DisplayName = "ShouldBeginFilter"))
 	bool K2_ShouldBeginFilter(const UObject* Context, TArray<UItemInstanceViewModel*>& ItemInstanceViewModels) const;
 
 	/**
@@ -60,7 +60,7 @@ protected:
 	 * @param Context A context that can contain any information the Filter requires to do its job.
 	 * @param ItemInstanceViewModel The ItemViewModel to evaluate.
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Inventory System|Filter", meta = (DisplayName = "DoesItemInstanceViewModelPassFilter"))
+	UFUNCTION(BlueprintImplementableEvent, Category = "Viewmodel|Filter", meta = (DisplayName = "DoesItemInstanceViewModelPassFilter"))
 	bool K2_DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const;
 
 private:

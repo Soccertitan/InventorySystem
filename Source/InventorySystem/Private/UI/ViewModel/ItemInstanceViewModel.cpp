@@ -50,11 +50,11 @@ UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* 
 		{
 			if (const FItemFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
 			{
-				WidgetClass = Fragment->ItemInstanceViewModelClass.Get();
-				if (!WidgetClass)
+				WidgetClass = Fragment->WidgetClass.Get();
+				if (!WidgetClass && !Fragment->WidgetClass.IsNull())
 				{
-					UAssetManager::Get().LoadAssetList({Fragment->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
-					WidgetClass = Fragment->ItemInstanceViewModelClass.Get();
+					UAssetManager::Get().LoadAssetList({Fragment->WidgetClass.ToSoftObjectPath()})->WaitUntilComplete();
+					WidgetClass = Fragment->WidgetClass.Get();
 				}
 			}
 		}

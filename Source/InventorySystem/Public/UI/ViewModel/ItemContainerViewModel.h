@@ -25,35 +25,35 @@ class INVENTORYSYSTEM_API UItemContainerViewModel : public UMVVMViewModelBase
 public:
 	UItemContainerViewModel();
 
-	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemContainer")
 	UItemContainer* GetItemContainer() const;
 
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	FText GetItemContainerName() const {return ItemContainerName;}
 
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	int32 GetConsumedCapacity() const;
 
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	int32 GetMaxCapacity() const;
 
 	/** Called only once when the ItemInstanceViewModels are first created in SetItemContainer. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model", DisplayName = GetItemInstanceViewModels)
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer", DisplayName = GetItemInstanceViewModels)
 	TArray<UItemInstanceViewModel*> K2_GetItemInstanceViewModels() const;
 	
 	/** Returns a const reference to the array of ItemInstanceViewModels. */
 	const TArray<UItemInstanceViewModel*>& GetItemInstanceViewModels() const;
 
 	/** Called whenever an ItemInstanceViewModel is added to the ItemInstanceViewModels. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	UItemInstanceViewModel* GetAddedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 	/** Called whenever an ItemInstanceViewModel is removed to the ItemInstanceViewModels. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	UItemInstanceViewModel* GetRemovedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 	/** Called whenever an ItemInstanceViewModel is changed in the ItemInstanceViewModels. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	UItemInstanceViewModel* GetChangedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 protected:

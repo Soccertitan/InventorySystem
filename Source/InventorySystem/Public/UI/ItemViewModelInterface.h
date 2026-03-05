@@ -28,6 +28,6 @@ public:
 	/**
 	 * @param ViewModel ViewModel to assign to the widget.
 	 */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetItemViewModel(UItemInstanceViewModel* ViewModel);
 };

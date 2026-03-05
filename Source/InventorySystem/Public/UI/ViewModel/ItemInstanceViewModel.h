@@ -27,10 +27,10 @@ public:
 	/** Updates the ViewModel with the specified ItemInstance. */
 	void SetItemInstance(const FItemInstance& InItemInstance);
 	
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
 	FMVVMEventField OnViewModelInitialized() const { return{}; }
 
-	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
 	const FItemInstance& GetItemInstance() const { return ItemInstance; }
 	
 	FText GetItemName() const { return ItemName; }
@@ -39,9 +39,9 @@ public:
 	int32 GetQuantity() const {return Quantity;}
 	int32 GetMaxQuantity() const {return MaxQuantity;}
 
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
 	bool CanHaveMaxQuantityGreaterThanOne() const {return MaxQuantity > 1;}
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
 	bool IsAtMaxQuantity() const {return Quantity >= MaxQuantity;}
 	
 	/**
@@ -51,16 +51,16 @@ public:
 	 * @param WidgetClass The widget to create.
 	 * @return The newly created widget.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	UUserWidget* CreateItemDetailsWidget(APlayerController* OwningPlayer, 
 		UPARAM(meta = (MustImplement = "/Script/InventorySystem.ItemViewModelInterface")) TSubclassOf<UUserWidget> WidgetClass = nullptr);
 	
 	/** Loads the ItemDefinition using the cached copy of the item. */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void LoadItemDefinition();
 	
 	/** Resets the ItemDefinition handle freeing resources. */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void ReleaseItemDefinitionHandle();
 	
 protected:
@@ -84,7 +84,7 @@ protected:
 	virtual void OnItemInstanceSet(){}
 
 	/** Called from SetItemInstance when a valid ItemInstance has been set. */
-	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemSet")
+	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemInstanceSet")
 	void K2_OnItemInstanceSet();
 
 	/** Called when the ItemDefinition is loaded. */
@@ -94,10 +94,15 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemDefinitionLoaded")
 	void K2_OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition);
 	
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetItemName(FText InValue);
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetDescription(FText InValue);
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetIcon(const TSoftObjectPtr<UTexture2D>& InValue);
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetQuantity(int32 InValue);
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetMaxQuantity(int32 InValue);
 	
 private:

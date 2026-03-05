@@ -21,9 +21,9 @@ class INVENTORYSYSTEM_API UInventoryViewModelBlueprintFunctionLibrary : public U
 public:
 
 	/** Creates an ItemInstance ViewModel from the Item's UI fragment. If it does not exist, uses the base ItemInstanceViewModel class. */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|View Model", meta = (DefaultToSelf = "Owner"))
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance", meta = (DefaultToSelf = "Owner"))
 	static UItemInstanceViewModel* CreateItemInstanceViewModel(UObject* Owner, const FItemInstance& ItemInstance);
 	
-	UFUNCTION(BlueprintPure, Category = "Inventory System|View Model")
+	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
 	static bool DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item);
 };
