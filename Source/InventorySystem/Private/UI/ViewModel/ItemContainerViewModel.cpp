@@ -88,8 +88,11 @@ void UItemContainerViewModel::LoadItemDefinitions(const TArray<FItemInstance>& I
 		}
 	}
 	
-	FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemContainerViewModel::ItemDefinitionsLoaded, ItemInstances);
-	UAssetManager::Get().PreloadPrimaryAssets(AssetList, {"ViewModel"}, false, Delegate);
+	if (AssetList.Num() > 0)
+	{
+		FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemContainerViewModel::ItemDefinitionsLoaded, ItemInstances);
+		UAssetManager::Get().PreloadPrimaryAssets(AssetList, {"ViewModel"}, false, Delegate);
+	}
 }
 
 void UItemContainerViewModel::ItemDefinitionsLoaded(TArray<FItemInstance> ItemInstances)

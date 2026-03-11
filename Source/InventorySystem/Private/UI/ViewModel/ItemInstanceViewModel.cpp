@@ -39,6 +39,7 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& InItemInstance
 		{
 			LoadItemDefinition();
 		}
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsValidItemInstance);
 	}
 }
 

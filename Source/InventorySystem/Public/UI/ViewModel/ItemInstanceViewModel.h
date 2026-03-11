@@ -33,6 +33,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
 	const FItemInstance& GetItemInstance() const { return ItemInstance; }
 	
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
+	bool IsValidItemInstance() const { return ItemInstance.IsValid(); }
+
 	FText GetItemName() const { return ItemName; }
 	FText GetDescription() const { return Description; }
 	TSoftObjectPtr<UTexture2D> GetIcon() const {return Icon;}
