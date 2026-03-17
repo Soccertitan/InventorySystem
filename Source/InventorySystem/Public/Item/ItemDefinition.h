@@ -61,9 +61,6 @@ public:
 	UItemDefinition();
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 	virtual void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Primary Asset")
-	FPrimaryAssetType AssetType;
 	
 	/** User facing text of the item name */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition")

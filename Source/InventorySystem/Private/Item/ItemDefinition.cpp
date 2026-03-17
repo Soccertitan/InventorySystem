@@ -14,12 +14,11 @@ void FItemFragment::AddItemShard(TInstancedStruct<FItem>& Item, const TInstanced
 UItemDefinition::UItemDefinition()
 {
 	ItemClass.InitializeAsScriptStruct(FItem::StaticStruct());
-	AssetType = TEXT("ItemDefinition");
 }
 
 FPrimaryAssetId UItemDefinition::GetPrimaryAssetId() const
 {
-	return FPrimaryAssetId(AssetType, GetFName());
+	return FPrimaryAssetId(StaticClass()->GetFName(), GetFName());
 }
 
 void UItemDefinition::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
