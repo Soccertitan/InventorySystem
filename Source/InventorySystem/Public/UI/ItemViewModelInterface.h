@@ -29,5 +29,5 @@ public:
 	 * @param ViewModel ViewModel to assign to the widget.
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Viewmodel|ItemInstance")
-	void SetItemViewModel(UItemInstanceViewModel* ViewModel);
+	void SetItemViewModel(UItemViewModel* ViewModel);
 };

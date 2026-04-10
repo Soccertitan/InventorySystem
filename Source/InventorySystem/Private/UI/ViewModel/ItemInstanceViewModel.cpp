@@ -5,17 +5,13 @@
 
 #include "InventoryBlueprintFunctionLibrary.h"
 #include "InventoryManagerComponent.h"
-#include "InventorySystem.h"
-#include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
 #include "Item/ItemDefinition.h"
 #include "Item/Fragment/ItemFragment_UI.h"
-#include "ItemContainer/ItemContainer.h"
-#include "UI/ItemViewModelInterface.h"
+#include "UI/ViewModel/ItemViewModel.h"
 
 UItemInstanceViewModel::UItemInstanceViewModel()
 {
-	Bundles.Add("UI");
 }
 
 void UItemInstanceViewModel::SetItemInstance(const FItemInstance& InItemInstance)
@@ -30,128 +26,68 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& InItemInstance
 		}
 
 		ItemInstance = InItemInstance;
-		
 		SetQuantity(ItemInstance.GetQuantity());
-		OnItemInstanceSet();
-		K2_OnItemInstanceSet();
 
-		if (bShouldLoadItemDefinition && bAutoLoadItemDefinition)
+		if (bShouldLoadItemDefinition)
 		{
-			LoadItemDefinition();
-		}
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsValidItemInstance);
-	}
-}
-
-UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* OwningPlayer, TSubclassOf<UUserWidget> WidgetClass)
-{
-	if (!WidgetClass)
-	{
-		if (const UItemDefinition* ItemDefinition = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem()))
-		{
-			if (const FItemFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
-			{
-				WidgetClass = Fragment->WidgetClass.Get();
-				if (!WidgetClass && !Fragment->WidgetClass.IsNull())
-				{
-					UAssetManager::Get().LoadAssetList({Fragment->WidgetClass.ToSoftObjectPath()})->WaitUntilComplete();
-					WidgetClass = Fragment->WidgetClass.Get();
-				}
-			}
-		}
-	}
-
-	if (WidgetClass)
-	{
-		UUserWidget* NewWidget = CreateWidget<UUserWidget>(OwningPlayer, WidgetClass);
-		if (NewWidget->Implements<UItemViewModelInterface>())
-		{
-			IItemViewModelInterface::Execute_SetItemViewModel(NewWidget, this);
+			LoadItemDefinition(ItemInstance.GetItem().Get<FItem>().GetItemDefinition());
 		}
 		else
 		{
-			UE_LOG(LogInventorySystem, Error, TEXT("[%s] does not implement ItemViewModelInterface."), *GetNameSafe(NewWidget));
+			if (ItemViewModel)
+			{
+				ItemViewModel->SetItem(ItemInstance.GetItem());
+			}
 		}
-		return NewWidget;
 	}
-	return nullptr;
-}
-
-void UItemInstanceViewModel::LoadItemDefinition()
-{
-	if (const FItem* ItemPtr = ItemInstance.GetItem().GetPtr<FItem>())
+	else
 	{
-		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(
-		   ItemPtr->GetItemDefinition().ToSoftObjectPath());
-	
-		if (AssetId.IsValid())
-		{
-			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemInstanceViewModel::Internal_OnItemDefinitionLoaded);
-			ItemDefinitionStreamableHandle = UAssetManager::Get().PreloadPrimaryAssets(
-			   {AssetId}, Bundles, bLoadRecursive, Delegate);
-		}
+		ItemViewModel = NewObject<UItemViewModel>(this);
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(ItemViewModel);
+		ItemInstance = FItemInstance();
+		SetQuantity(0);
 	}
-}
-
-void UItemInstanceViewModel::ReleaseItemDefinitionHandle()
-{
-	ItemDefinitionStreamableHandle.Reset();
-}
-
-void UItemInstanceViewModel::SetItemName(FText InValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(ItemName, InValue);
-}
-
-void UItemInstanceViewModel::SetDescription(FText InValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(Description, InValue);
-}
-
-void UItemInstanceViewModel::SetIcon(const TSoftObjectPtr<UTexture2D>& InValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(Icon, InValue);
+	
+	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsItemInstanceValid);
 }
 
 void UItemInstanceViewModel::SetQuantity(int32 InValue)
 {
 	UE_MVVM_SET_PROPERTY_VALUE(Quantity, InValue);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsAtMaxQuantity);
 }
 
-void UItemInstanceViewModel::SetMaxQuantity(int32 InValue)
+void UItemInstanceViewModel::LoadItemDefinition(TSoftObjectPtr<UItemDefinition> ItemDefinition)
 {
-	UE_MVVM_SET_PROPERTY_VALUE(MaxQuantity, InValue);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(IsAtMaxQuantity);
-	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(CanHaveMaxQuantityGreaterThanOne);
-}
-
-void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
-{
-	if (const UItemDefinition* ItemDefinition = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem()))
+	if (!ItemDefinition.IsNull())
 	{
-		SetItemName(ItemDefinition->ItemName);
+		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(
+			ItemDefinition.ToSoftObjectPath());
+		
+		if (AssetId.IsValid())
+		{
+			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemInstanceViewModel::Internal_OnItemDefinitionLoaded, ItemDefinition);
+			ItemDefinitionStreamableHandle = UAssetManager::Get().PreloadPrimaryAssets(
+			   {AssetId}, {"ViewModel"}, false, Delegate);
+		}
+	}
+}
+
+void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded(TSoftObjectPtr<UItemDefinition> ItemDefinitionSoft)
+{
+	if (const UItemDefinition* ItemDefinition = ItemDefinitionSoft.Get())
+	{
 		if (const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
 		{
-			SetDescription(UIFrag->Description);
-			SetIcon(UIFrag->Icon);
+			TSubclassOf<UItemViewModel> ItemViewModelClass = UIFrag->ItemViewModelClass.Get();
+			if (!ItemViewModelClass)
+			{
+				ItemViewModelClass = UItemViewModel::StaticClass();
+			}
+			
+			ItemViewModel = NewObject<UItemViewModel>(this, ItemViewModelClass);
+			ItemViewModel->SetItemInstance(this);
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(ItemViewModel);
 		}
-		if (ItemInstance.GetItemContainer())
-		{
-			SetMaxQuantity(ItemInstance.GetItemContainer()->GetItemQuantityLimit(ItemInstance.GetItem()));
-		}
-		else
-		{
-			SetMaxQuantity(0);
-		}
-		OnItemDefinitionLoaded(ItemDefinition);
-		K2_OnItemDefinitionLoaded(ItemDefinition);
-		
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(OnViewModelInitialized);
 	}
-	
-	if (bAutoUnloadItemDefinition)
-	{
-		ItemDefinitionStreamableHandle.Reset();
-	}
+	ItemDefinitionStreamableHandle.Reset();
 }

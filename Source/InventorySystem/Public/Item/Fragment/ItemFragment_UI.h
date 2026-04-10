@@ -6,7 +6,7 @@
 #include "Item/ItemDefinition.h"
 #include "ItemFragment_UI.generated.h"
 
-class UItemInstanceViewModel;
+class UItemViewModel;
 
 /**
  * Describes information that is shown to a user.
@@ -28,7 +28,7 @@ struct FItemFragment_UI : public FItemFragment
 
 	/** The ItemInstanceViewModel to create. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (AssetBundles = "ViewModel"), NoClear)
-	TSoftClassPtr<UItemInstanceViewModel> ItemInstanceViewModelClass;
+	TSoftClassPtr<UItemViewModel> ItemViewModelClass;
 
 	/** A specialized widget to display additional item information. The class must implement the ItemViewModelInterface. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (AssetBundles = "UI", MustImplement = "/Script/InventorySystem.ItemViewModelInterface"))

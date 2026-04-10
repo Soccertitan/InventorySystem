@@ -3,12 +3,12 @@
 
 #include "Item/Fragment/ItemFragment_UI.h"
 
-#include "UI/ViewModel/ItemInstanceViewModel.h"
+#include "UI/ViewModel/ItemViewModel.h"
 
 
 FItemFragment_UI::FItemFragment_UI()
 {
-	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
+	ItemViewModelClass = UItemViewModel::StaticClass();
 }
 
 void FItemFragment_UI::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
