@@ -3,7 +3,6 @@
 
 #include "UI/ViewModel/Filter/ItemInstanceViewModelFilter_TagStats.h"
 
-#include "ItemContainer/ItemContainer.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
 
@@ -29,7 +28,7 @@ bool UItemInstanceViewModelFilter_TagStats::DoesItemInstanceViewModelPassFilter(
 		return false;
 	}
 
-	if (const FItem* ItemPtr = ItemInstanceViewModel->GetItemInstance().GetItem().GetPtr<FItem>())
+	if (const FItem* ItemPtr = ItemInstanceViewModel->GetItem().GetPtr<FItem>())
 	{
 		for (const auto& Requirement : RequiredTagStats.GetItems())
 		{

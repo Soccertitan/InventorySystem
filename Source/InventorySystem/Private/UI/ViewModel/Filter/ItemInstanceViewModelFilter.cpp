@@ -39,7 +39,7 @@ bool UItemInstanceViewModelFilter::ShouldBeginFilter(const UObject* Context, TAr
 
 bool UItemInstanceViewModelFilter::DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
 {
-	if (!ItemInstanceViewModel->GetItemInstance().GetItem().IsValid())
+	if (!ItemInstanceViewModel->GetItem().IsValid())
 	{
 		return false;
 	}

@@ -31,7 +31,7 @@ bool UItemInstanceViewModelFilter_ItemDefinition::DoesItemInstanceViewModelPassF
 
 	for (const TSoftObjectPtr<UItemDefinition> ItemDefinition : ItemDefinitions)
 	{
-		if (ItemInstanceViewModel->GetItemInstance().GetItem().Get<FItem>().GetItemDefinition() == ItemDefinition)
+		if (ItemInstanceViewModel->GetItem().Get<FItem>().GetItemDefinition() == ItemDefinition)
 		{
 			return true;
 		}

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "MVVMViewModelBase.h"
-#include "StructUtils/InstancedStruct.h"
 #include "ItemContainerViewModel.generated.h"
 
 struct FItem;
@@ -27,9 +26,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemContainer")
 	UItemContainer* GetItemContainer() const;
-
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
+	
 	FText GetItemContainerName() const {return ItemContainerName;}
+	bool IsLoadingInitialItems() const {return bLoadingInitialItems;}
 
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	int32 GetConsumedCapacity() const;
@@ -52,13 +51,19 @@ public:
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	UItemInstanceViewModel* GetRemovedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
-	/** Called whenever an ItemInstanceViewModel is changed in the ItemInstanceViewModels. */
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
-	UItemInstanceViewModel* GetChangedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
-
 protected:
+	/** Bundles to load when asynchronously loading the ItemDefinition. */
+	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
+	TArray<FName> Bundles;
+	
+	/** If true, this will call RecursivelyExpandBundleData and recurse into sub bundles of other primary assets loaded by a bundle reference. */
+	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
+	bool bLoadRecursive = false;
+	
 	/** Updates the ItemContainer for this ViewModel. Triggers OnItemContainerSet if a new one is set. */
 	void SetItemContainer(UItemContainer* InItemContainer);
+	
+	void SetIsLoadingInitialItems(bool bValue);
 	
 	/** Called when a valid ItemContainer is set. */
 	virtual void OnItemContainerSet() {}
@@ -84,6 +89,9 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
 	FText ItemContainerName;
+	
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter = "IsLoadingInitialItems", meta = (AllowPrivateAccess = true))
+	bool bLoadingInitialItems = true;
 	
 	/** Loads the ItemDefinition for all Items to get the ItemInstanceViewModelClass. */
 	void LoadItemDefinitions(const TArray<FItemInstance>& ItemInstances);

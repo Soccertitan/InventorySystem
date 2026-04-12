@@ -6,7 +6,6 @@
 #include "InventoryFastTypes.h"
 #include "MVVMViewModelBase.h"
 #include "Engine/StreamableManager.h"
-#include "Types/MVVMEventField.h"
 #include "ItemInstanceViewModel.generated.h"
 
 
@@ -24,17 +23,23 @@ class INVENTORYSYSTEM_API UItemInstanceViewModel : public UMVVMViewModelBase
 public:
 	UItemInstanceViewModel();
 	
-	/** Updates the ViewModel with the specified ItemInstance. */
-	void SetItemInstance(const FItemInstance& InItemInstance);
+	/** Updates the ViewModel with the specified ItemInstance. Calls SetItem. */
+	void SetItemInstance(const FItemInstance& ItemInstance);
 	
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
-	FMVVMEventField OnViewModelInitialized() const { return{}; }
+	/** Updates the ViewModel with the Item. Calls SetItemDefinition and loads additional bundle information if AutoLoad is true. */
+	void SetItem(const TInstancedStruct<FItem>& Item, bool bShouldSetItemDefinition = true);
+	
+	/** Updates the ViewModel with the information from the ItemDefinition. */
+	void SetItemDefinition(const UItemDefinition* ItemDefinition);
 
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
-	const FItemInstance& GetItemInstance() const { return ItemInstance; }
+	FGuid GetGuid() const { return ItemGuid; }
 	
-	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
-	bool IsValidItemInstance() const { return ItemInstance.IsValid(); }
+	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
+	UItemContainer* GetItemContainer() const { return ItemContainerWeak.Get(); }
+	
+	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
+	const TInstancedStruct<FItem>& GetItem() const { return CachedItem; }
 
 	FText GetItemName() const { return ItemName; }
 	FText GetDescription() const { return Description; }
@@ -58,7 +63,7 @@ public:
 	UUserWidget* CreateItemDetailsWidget(APlayerController* OwningPlayer, 
 		UPARAM(meta = (MustImplement = "/Script/InventorySystem.ItemViewModelInterface")) TSubclassOf<UUserWidget> WidgetClass = nullptr);
 	
-	/** Loads the ItemDefinition using the cached copy of the item. */
+	/** Loads the ItemDefinition using the cached SoftObjectPointer of the ItemDefinition. */
 	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void LoadItemDefinition();
 	
@@ -71,7 +76,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	TArray<FName> Bundles;
 	
-	/** If true, automatically loads the ItemDefinition during SetItemInstance. */
+	/** If true, automatically loads the ItemDefinition with bundles during SetItem. */
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	bool bAutoLoadItemDefinition = true;
 	
@@ -79,23 +84,21 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	bool bLoadRecursive = true;
 	
-	/** If true, after the ItemDefinition is loaded and functions have had a chance to get data, will automatically unload the resource. */
+	/** If true, after the ItemDefinition is loaded and functions have had a chance to get data, will automatically unload the steamable handle. */
 	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
 	bool bAutoUnloadItemDefinition = true;
 	
-	/** Called from SetItemInstance when a valid ItemInstance has been set. */
-	virtual void OnItemInstanceSet(){}
+	UFUNCTION(BlueprintNativeEvent)
+	void OnItemInstanceSet(const FItemInstance& ItemInstance);
+	virtual void OnItemInstanceSet_Implementation(const FItemInstance& ItemInstance);
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void OnItemSet(const TInstancedStruct<FItem>& Item);
+	virtual void OnItemSet_Implementation(const TInstancedStruct<FItem>& Item);
 
-	/** Called from SetItemInstance when a valid ItemInstance has been set. */
-	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemInstanceSet")
-	void K2_OnItemInstanceSet();
-
-	/** Called when the ItemDefinition is loaded. */
-	virtual void OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition){}
-
-	/** Called when the ItemDefinition is loaded. */
-	UFUNCTION(BlueprintImplementableEvent, DisplayName = "OnItemDefinitionLoaded")
-	void K2_OnItemDefinitionLoaded(const UItemDefinition* ItemDefinition);
+	UFUNCTION(BlueprintNativeEvent)
+	void OnItemDefinitionSet(const UItemDefinition* ItemDefinition);
+	virtual void OnItemDefinitionSet_Implementation(const UItemDefinition* ItemDefinition);
 	
 	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
 	void SetItemName(FText InValue);
@@ -109,26 +112,36 @@ protected:
 	void SetMaxQuantity(int32 InValue);
 	
 private:
-	/** Cached copy of the ItemInstance. */
+	/** The unique identifier for the item. */
+	FGuid ItemGuid;
+
+	/** The item container the item resides in. Can be null. */
 	UPROPERTY()
-	FItemInstance ItemInstance;
+	TWeakObjectPtr<UItemContainer> ItemContainerWeak;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	/** Cached copy of the item. */
+	UPROPERTY()
+	TInstancedStruct<FItem> CachedItem;
+
+	/** Cached soft object pointer of the Item Def */
+	UPROPERTY()
+	TSoftObjectPtr<UItemDefinition> ItemDefinitionSoft;
+
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	FText ItemName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	FText Description;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	TSoftObjectPtr<UTexture2D> Icon;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 Quantity = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 MaxQuantity = 0;
 	
-	FDelegateHandle OnItemInstanceChangedHandle;
 	/** Cached handle for the ItemDefinition. */
 	TSharedPtr<FStreamableHandle> ItemDefinitionStreamableHandle;
 	

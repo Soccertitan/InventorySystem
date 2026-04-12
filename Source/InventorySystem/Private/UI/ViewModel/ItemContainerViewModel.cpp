@@ -9,12 +9,12 @@
 #include "InventoryManagerComponent.h"
 #include "InventorySystem.h"
 #include "Engine/AssetManager.h"
-#include "Item/Fragment/ItemFragment_UI.h"
 #include "UI/InventoryViewModelBlueprintFunctionLibrary.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
 UItemContainerViewModel::UItemContainerViewModel()
 {
+	Bundles.Add("ViewModel");
 }
 
 void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
@@ -39,9 +39,18 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 		InItemContainer->OnItemAddedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemAdded);
 		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemRemoved);
 		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemChanged);
-
-		ItemInstanceViewModels.Empty(GetItemContainer()->GetItems().Num());
-		LoadItemDefinitions(GetItemContainer()->GetItems());
+		
+		const TArray<FItemInstance>& Items = GetItemContainer()->GetItems();
+		ItemInstanceViewModels.Empty(Items.Num());
+		if (Items.Num() > 0)
+		{
+			SetIsLoadingInitialItems(true);
+			LoadItemDefinitions(GetItemContainer()->GetItems());
+		}
+		else
+		{
+			SetIsLoadingInitialItems(false);
+		}
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
 		UE_MVVM_SET_PROPERTY_VALUE(ItemContainerName, GetItemContainer()->GetDisplayName());
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetMaxCapacity);
@@ -51,19 +60,33 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 	}
 }
 
+void UItemContainerViewModel::SetIsLoadingInitialItems(bool bValue)
+{
+	UE_MVVM_SET_PROPERTY_VALUE(bLoadingInitialItems, bValue);
+}
+
 UItemContainer* UItemContainerViewModel::GetItemContainer() const
 {
-	return ItemContainer.Get();
+	return ItemContainer;
 }
 
 int32 UItemContainerViewModel::GetConsumedCapacity() const
 {
-	return GetItemContainer()->GetConsumedCapacity();
+	if (GetItemContainer())
+	{
+		return GetItemContainer()->GetConsumedCapacity();
+	}
+	
+	return 0;
 }
 
 int32 UItemContainerViewModel::GetMaxCapacity() const
 {
-	return GetItemContainer()->GetMaxCapacity();
+	if (GetItemContainer())
+	{
+		return GetItemContainer()->GetMaxCapacity();
+	}
+	return 0;
 }
 
 TArray<UItemInstanceViewModel*> UItemContainerViewModel::K2_GetItemInstanceViewModels() const
@@ -91,7 +114,7 @@ void UItemContainerViewModel::LoadItemDefinitions(const TArray<FItemInstance>& I
 	if (AssetList.Num() > 0)
 	{
 		FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemContainerViewModel::ItemDefinitionsLoaded, ItemInstances);
-		UAssetManager::Get().PreloadPrimaryAssets(AssetList, {"ViewModel"}, false, Delegate);
+		UAssetManager::Get().PreloadPrimaryAssets(AssetList, Bundles, bLoadRecursive, Delegate);
 	}
 }
 
@@ -103,9 +126,18 @@ void UItemContainerViewModel::ItemDefinitionsLoaded(TArray<FItemInstance> ItemIn
 		ItemInstanceViewModels.Add(NewViewModel);
 		OnItemAdded(NewViewModel);
 
-		ItemInstanceViewModelBuffer = NewViewModel;
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemInstanceViewModel);
-		ItemInstanceViewModelBuffer = nullptr;
+		if (!IsLoadingInitialItems())
+		{
+			ItemInstanceViewModelBuffer = NewViewModel;
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemInstanceViewModel);
+			ItemInstanceViewModelBuffer = nullptr;
+		}
+	}
+	
+	if (IsLoadingInitialItems() && ItemInstanceViewModels.Num() >= GetConsumedCapacity())
+	{
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
+		SetIsLoadingInitialItems(false);
 	}
 }
 
@@ -119,7 +151,7 @@ void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemIn
 {
 	for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 	{
-		if (ItemInstanceViewModels[idx]->GetItemInstance() == ItemInstance)
+		if (ItemInstanceViewModels[idx]->GetGuid() == ItemInstance.GetGuid())
 		{
 			UItemInstanceViewModel* RemovedViewModel = ItemInstanceViewModels[idx];
 			ItemInstanceViewModels.RemoveAtSwap(idx);
@@ -138,14 +170,10 @@ void UItemContainerViewModel::Internal_OnItemChanged(const FItemInstance& ItemIn
 {
 	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
 	{
-		if (ItemInstanceViewModel->GetItemInstance() == ItemInstance)
+		if (ItemInstanceViewModel->GetGuid() == ItemInstance.GetGuid())
 		{
 			ItemInstanceViewModel->SetItemInstance(ItemInstance);
 			OnItemChanged(ItemInstanceViewModel);
-
-			ItemInstanceViewModelBuffer = ItemInstanceViewModel;
-			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetChangedItemInstanceViewModel);
-			ItemInstanceViewModelBuffer = nullptr;
 			break;
 		}
 	}
