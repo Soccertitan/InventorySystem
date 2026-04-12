@@ -52,6 +52,10 @@ public:
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	UItemInstanceViewModel* GetRemovedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
+	/** Called whenever an ItemInstanceViewModel is changed in the ItemInstanceViewModels. */
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
+	UItemInstanceViewModel* GetChangedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
+
 protected:
 	/** Updates the ItemContainer for this ViewModel. Triggers OnItemContainerSet if a new one is set. */
 	void SetItemContainer(UItemContainer* InItemContainer);
@@ -67,9 +71,6 @@ protected:
 	virtual void OnItemChanged(UItemInstanceViewModel* ItemInstanceViewModel) {}
 
 private:
-	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
-	FText ItemContainerName;
-	
 	UPROPERTY()
 	TObjectPtr<UItemContainer> ItemContainer;
 
@@ -77,15 +78,20 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<UItemInstanceViewModel>> ItemInstanceViewModels;
 
-	/** Temporarily updated as items are added or removed. */
+	/** Temporarily updated as items are added, removed, and changed. */
 	UPROPERTY()
 	TObjectPtr<UItemInstanceViewModel> ItemInstanceViewModelBuffer;
+
+	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
+	FText ItemContainerName;
+	
+	/** Loads the ItemDefinition for all Items to get the ItemInstanceViewModelClass. */
+	void LoadItemDefinitions(const TArray<FItemInstance>& ItemInstances);
+	void ItemDefinitionsLoaded(TArray<FItemInstance> ItemInstances);
 
 	void Internal_OnItemAdded(const FItemInstance& ItemInstance);
 	void Internal_OnItemRemoved(const FItemInstance& ItemInstance);
 	void Internal_OnItemChanged(const FItemInstance& ItemInstance);
-	
-	UItemInstanceViewModel* CreateItemInstanceViewModel(const FItemInstance& ItemInstance);
 	
 	friend class UInventoryUISubsystem;
 };
