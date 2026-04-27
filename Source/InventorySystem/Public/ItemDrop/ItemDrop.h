@@ -28,16 +28,16 @@ public:
 
 	/**
 	 * The InventoryManager will try and take the item from this ItemDropActor.
-	 * @param InventoryManagerComponent The ItemManager trying to take the item.
-	 * @param Container The Container to add the item to.
+	 * @param InventoryManagerComponent The InventoryManager trying to take the item.
+	 * @param ItemContainer The Container to add the item to.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Item Drop")
-	void TryTakeItem(UInventoryManagerComponent* InventoryManagerComponent, UItemContainer* Container);
+	void TakeItem(UInventoryManagerComponent* InventoryManagerComponent, UItemContainer* ItemContainer);
 
 	/**
-	 * Decides if the passed in ItemManager can attempt to take this ItemDrop.
-	 * @param InventoryManagerComponent The ItemManagerComponent to check if it can take the item.
-	 * @return True if the ItemManager can take the item.
+	 * Decides if the passed in InventoryManager can attempt to take this ItemDrop.
+	 * @param InventoryManagerComponent The InventoryManagerComponent to check if it can take the item.
+	 * @return True if the InventoryManager can take the item.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item Drop")
 	virtual bool CanTakeItem(UInventoryManagerComponent* InventoryManagerComponent) const;
@@ -51,19 +51,19 @@ public:
 protected:
 	/**
 	 * Initializes this actor with an Item and optional context data.
-	 * @param InItemGuid The item to assign this ItemDrop.
+	 * @param Handle The item to assign this ItemDrop.
 	 * @param Context Custom user data that can be passed in and processed.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Item Drop")
-	virtual void InitializeItemDrop(FGuid InItemGuid, UObject* Context);
+	virtual void InitializeItemDrop(FItemInstanceHandle Handle, UObject* Context);
 
 	/**
 	 * Called on the server when this actor has been initialized with an item.
-	 * @param InItemGuid The item this actor was initialized with. The Item is guaranteed to be valid.
+	 * @param Handle The item this actor was initialized with. The Item is guaranteed to be valid.
 	 * @param Context Custom user data that can be passed in and processed.
 	 */
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "InitializeItemDrop")
-	void K2_InitializeItemDrop(FGuid InItemGuid, UObject* Context);
+	void K2_InitializeItemDrop(FItemInstanceHandle Handle, UObject* Context);
 
 	/**
 	 * Decides if the passed in InventoryManager can attempt to take this ItemDrop.
@@ -76,7 +76,7 @@ protected:
 private:
 	/** The item held by this actor. */
 	UPROPERTY(Replicated)
-	FGuid ItemGuid;
+	FItemInstanceHandle ItemInstanceHandle;
 
 	/** Cached reference to the ItemDropManager that owns this. */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))

@@ -31,6 +31,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
 	static bool IsItemInstanceValid(UPARAM(ref) const FItemInstance& ItemInstance);
+	
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
+	static FItemInstanceHandle GetHandle(const FItemInstance& ItemInstance);
+	
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
+	static bool IsItemInstanceHandleValid(const FItemInstanceHandle& Handle);
 
 	/**
 	 * Synchronously loads the ItemDefinition from the Item. Does not flush any current AsyncLoads.

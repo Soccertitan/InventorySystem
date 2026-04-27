@@ -94,13 +94,34 @@ void FAddItemPlan::UpdateAmountGiven(int32 NewValue)
 	}
 }
 
-FAddItemPlanResult::FAddItemPlanResult(const FAddItemPlan& InPlan, const TArray<FGuid>& InItemGuids)
+FItemInstanceHandle::FItemInstanceHandle(const FItemInstance& ItemInstance)
+{
+	ItemGuid = ItemInstance.GetGuid();
+	ItemContainer = ItemInstance.GetItemContainer();
+}
+
+bool FItemInstanceHandle::IsValid() const
+{
+	if (!ItemGuid.IsValid())
+	{
+		return false;
+	}
+	
+	if (!ItemContainer.Get())
+	{
+		return false;
+	}
+	
+	return true;
+}
+
+FAddItemPlanResult::FAddItemPlanResult(const FAddItemPlan& InPlan, const TArray<FItemInstanceHandle>& InItemInstanceHandles)
 {
 	AmountToGive = InPlan.GetAmountToGive();
 	AmountGiven = InPlan.GetAmountGiven();
 	Result = InPlan.GetResult();
 	Error = InPlan.Error;
-	ItemGuids = InItemGuids;
+	ItemInstanceHandles = InItemInstanceHandles;
 }
 
 //----------------------------------------------------------------------------------------

@@ -28,6 +28,16 @@ bool UInventoryBlueprintFunctionLibrary::IsItemInstanceValid(const FItemInstance
 	return ItemInstance.IsValid();
 }
 
+FItemInstanceHandle UInventoryBlueprintFunctionLibrary::GetHandle(const FItemInstance& ItemInstance)
+{
+	return FItemInstanceHandle(ItemInstance);
+}
+
+bool UInventoryBlueprintFunctionLibrary::IsItemInstanceHandleValid(const FItemInstanceHandle& Handle)
+{
+	return Handle.IsValid();
+}
+
 const UItemDefinition* UInventoryBlueprintFunctionLibrary::GetItemDefinition(const TInstancedStruct<FItem>& Item)
 {
 	if (Item.IsValid())

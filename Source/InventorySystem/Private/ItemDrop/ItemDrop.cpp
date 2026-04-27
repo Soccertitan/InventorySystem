@@ -4,7 +4,6 @@
 #include "ItemDrop/ItemDrop.h"
 
 #include "BlueprintNodeHelpers.h"
-#include "Item/Item.h"
 #include "ItemContainer/ItemContainer.h"
 #include "InventoryManagerComponent.h"
 #include "ItemDrop/ItemDropManager.h"
@@ -26,25 +25,25 @@ void AItemDrop::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutL
 
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
-	DOREPLIFETIME_WITH_PARAMS_FAST(AItemDrop, ItemGuid, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AItemDrop, ItemInstanceHandle, Params);
 }
 
-void AItemDrop::TryTakeItem(UInventoryManagerComponent* InventoryManagerComponent, UItemContainer* Container)
+void AItemDrop::TakeItem(UInventoryManagerComponent* InventoryManagerComponent, UItemContainer* ItemContainer)
 {
-	if (!HasAuthority() || !CanTakeItem(InventoryManagerComponent) || !Container)
+	if (!HasAuthority() || !CanTakeItem(InventoryManagerComponent) || !ItemContainer)
 	{
 		return;
 	}
 
-	if (Container->GetInventoryManagerComponent() == ItemDropManager->InventoryManagerComponent)
+	if (ItemContainer->GetInventoryManagerComponent() == ItemDropManager->InventoryManagerComponent)
 	{
 		return;
 	}
 
-	FItemInstance ItemInstance = ItemDropManager->InventoryManagerComponent->K2_FindItemByGuid(ItemGuid);
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItem(ItemInstance.GetItem(), ItemInstance.GetQuantity(), Container);
+	FItemInstance ItemInstance = UInventoryManagerComponent::K2_FindItem(ItemInstanceHandle);
+	FAddItemPlanResult Result = InventoryManagerComponent->AddItem(ItemInstance.GetItem(), ItemInstance.GetQuantity(), ItemContainer);
 
-	ItemDropManager->InventoryManagerComponent->ConsumeItemByGuid(ItemGuid, Result.AmountGiven);
+	ItemDropManager->InventoryManagerComponent->K2_ConsumeItem(ItemInstanceHandle, Result.AmountGiven);
 }
 
 bool AItemDrop::CanTakeItem(UInventoryManagerComponent* InventoryManagerComponent) const
@@ -69,16 +68,16 @@ bool AItemDrop::CanTakeItem(UInventoryManagerComponent* InventoryManagerComponen
 
 FItemInstance AItemDrop::GetItemInstance() const
 {
-	return ItemDropManager->InventoryManagerComponent->K2_FindItemByGuid(ItemGuid);
+	return UInventoryManagerComponent::K2_FindItem(ItemInstanceHandle);
 }
 
-void AItemDrop::InitializeItemDrop(FGuid InItemGuid, UObject* Context)
+void AItemDrop::InitializeItemDrop(FItemInstanceHandle Handle, UObject* Context)
 {
 	if (HasAuthority())
 	{
-		ItemGuid = InItemGuid;
-		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ItemGuid, this);
-		K2_InitializeItemDrop(ItemGuid, Context);
+		ItemInstanceHandle = Handle;
+		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ItemInstanceHandle, this);
+		K2_InitializeItemDrop(Handle, Context);
 	}
 }
 

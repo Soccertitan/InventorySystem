@@ -31,7 +31,6 @@ public:
 	UInventoryManagerComponent();
 	virtual void BeginPlay() override;
 	virtual void PreNetReceive() override;
-	virtual void OnRegister() override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 #if WITH_EDITOR
@@ -78,24 +77,27 @@ public:
 
 	/** Gets all Containers this ItemManager has. */
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Inventory Manager")
-	const TArray<FItemContainerInstance>& GetItemContainers() const;
+	TArray<UItemContainer*> GetItemContainers() const;
 
+	/** Returns mutable pointers for all items in all ItemContainers. */
+	void GetItems(TArray<FItemInstance*> OutItemInstances) const;
+	
 	/** Returns a copy of all Items in the ItemManager. */
-	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "Inventory System|Inventory Manager")
-	TArray<FItemInstance> GetItems() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "Inventory System|Inventory Manager", DisplayName = "GetItems")
+	TArray<FItemInstance> K2_GetItems() const;
 
 	/**
-	 * @param ItemGuid The item to search for.
+	 * @param Handle The item to search for.
 	 * @return A pointer to the found item.
 	 */
-	FItemInstance* FindItemByGuid(FGuid ItemGuid) const;
+	static FItemInstance* FindItem(const FItemInstanceHandle& Handle);
 
 	/**
-	 * @param Guid The item to search for.
+	 * @param Handle The item to search for.
 	 * @return A copy of the found item.
 	 */
-	UFUNCTION(BlueprintPure, Category = "Inventory System|Inventory Manager", DisplayName = "Find Item By Guid")
-	FItemInstance K2_FindItemByGuid(FGuid Guid) const;
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Inventory Manager", DisplayName = "Find Item")
+	static FItemInstance K2_FindItem(const FItemInstanceHandle& Handle);
 
 	/**
 	 * @param ItemDefinition The ItemDefinition to check.
@@ -126,33 +128,22 @@ public:
 	 * @return The actual amount of the item that was added and any errors if the item could not be added in full.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	FAddItemPlanResult TryAddItem(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
-
-	/**
-	 * Tries to add a new item that will be managed by this ItemManager.
-	 * @param Item The item to add.
-	 * @param ItemContainerTag The container to add the item to.
-	 * @param Quantity The quantity of the item to add.
-	 * @return The actual amount of the item that was added and any errors if the item could not be added in full.
-	 */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	FAddItemPlanResult TryAddItemByTag(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity,
-		UPARAM(meta = (Categories = "ItemContainer")) const FGameplayTag ItemContainerTag);
+	FAddItemPlanResult AddItem(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
 
 	/**
 	 * Directly removes the Item from the ItemManager.
 	 * @param ItemInstance The ItemInstance to remove.
-	 * @return A copy of the Item that was removed.
+	 * @return True, if the item was removed.
 	 */
-	TInstancedStruct<FItem> TryRemoveItem(FItemInstance* ItemInstance);
+	void RemoveItem(const FItemInstance* ItemInstance);
 
 	/**
 	 * Directly removes the Item from the ItemManager.
-	 * @param ItemGuid The Item's identifier to remove.
-	 * @return A copy of the Item that was removed.
+	 * @param Handle The item to remove.
+	 * @return True, if the item was removed.
 	 */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	TInstancedStruct<FItem> TryRemoveItemByGuid(const FGuid ItemGuid);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager", DisplayName = "RemoveItem")
+	void K2_RemoveItem(const FItemInstanceHandle& Handle);
 
 	/**
 	 * Consumes the specified quantity of the item. If the quantity reaches 0, the item is removed from the ItemManager.
@@ -164,51 +155,40 @@ public:
 
 	/**
 	 * Consumes the specified quantity of the item. If the quantity reaches 0, the item is removed from the ItemManager.
-	 * @param ItemGuid The item to consume quantity from.
+	 * @param Handle The item to consume quantity from.
 	 * @param QuantityToConsume The amount to subtract from the item. Must be >= 0.
 	 * @return The amount that was consumed.
 	 */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	int32 ConsumeItemByGuid(const FGuid ItemGuid, const int32 QuantityToConsume = 1);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager", DisplayName = "ConsumeItem")
+	int32 K2_ConsumeItem(const FItemInstanceHandle& Handle, const int32 QuantityToConsume = 1);
 
 	/**
 	 * Gets all items with the matching ItemDef. Then subtracts quantity from them until the amount subtracted has reached
 	 * 0. Then, if an item's quantity is 0, removes the item from the ItemContainer.
 	 * @param ItemDefinition The ItemDef to look for amongst items.
+	 * @param ItemContainer The Item Container to consume the Item from, if null checks all ItemContainers in the Inventory Manager.
 	 * @param QuantityToConsume The amount to subtract from the items.
 	 * @return The amount that was consumed.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	int32 ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, const int32 QuantityToConsume);
+	int32 ConsumeItemsByDefinition(const UItemDefinition* ItemDefinition, UItemContainer* ItemContainer, const int32 QuantityToConsume = 1);
 
 	/**
-	 * Gets all items with the matching ItemDef in the ItemContainer. Then subtracts quantity from them until the amount subtracted has reached
-	 * 0. Then, if an item's quantity is 0, removes the item from the ItemContainer.
-	 * @param ItemDefinition The ItemDef to look for amongst items.
-	 * @param QuantityToConsume The amount to subtract from the items.
-	 * @param ItemContainer The items will only be consumed from the specified ItemContainer.
-	 * @return The amount that was consumed.
-	 */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager")
-	int32 ConsumeItemsByDefinitionInContainer(const UItemDefinition* ItemDefinition, const int32 QuantityToConsume, UItemContainer* ItemContainer);
-
-	/**
-	 * Tries to move an ItemInstance managed by the ItemManagerComponent into a different ItemContainer. Either in full or partial.
+	 * Tries to move an ItemInstance into a different ItemContainer. Either in full or partial.
 	 * @param ItemInstance The ItemInstance to move.
 	 * @param ItemContainer The Container to move the ItemInstance into.
 	 * @param QuantityToMove The amount from the Item to move into the Container.
 	 */
-	void TryMoveItem(FItemInstance* ItemInstance, UItemContainer* ItemContainer, int32 QuantityToMove);
+	void MoveItem(FItemInstance* ItemInstance, UItemContainer* ItemContainer, int32 QuantityToMove);
 
 	/**
 	 * Tries to move an ItemInstance managed by the ItemManagerComponent into a different ItemContainer. Either in full or partial.
-	 * @param ItemGuid The ItemInstance to move.
-	 * @param ItemContainerTag The Container to move the ItemInstance into.
+	 * @param Handle The Item to move.
+	 * @param ItemContainer The Container to move the ItemInstance into.
 	 * @param QuantityToMove The amount from the Item to move into the Container.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager", DisplayName = "TryMoveItem")
-	void K2_TryMoveItem(FGuid ItemGuid,
-		UPARAM(meta = (Categories = "ItemContainer")) const FGameplayTag ItemContainerTag, int32 QuantityToMove);
+	void K2_MoveItem(const FItemInstanceHandle Handle, UItemContainer* ItemContainer, int32 QuantityToMove);
 
 	/**
 	 * Tries to split the item stack in the existing container.
@@ -219,11 +199,11 @@ public:
 
 	/**
 	 * Tries to split the item stack in the existing container.
-	 * @param ItemGuid The Item to try and split.
+	 * @param Handle The Item to try and split.
 	 * @param Quantity The amount to split off from the original item into to the new item.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager", DisplayName = "SplitItemStack")
-	void K2_SplitItemStack(const FGuid ItemGuid, const int32 Quantity);
+	void K2_SplitItemStack(const FItemInstanceHandle Handle, const int32 Quantity);
 
 	/**
 	 * Tries to take quantity from the SourceItem and give it to the TargetItem. To stack items within the same ItemContainer.
@@ -235,12 +215,12 @@ public:
 
 	/**
 	 * Tries to take quantity from the SourceItem and give it to the TargetItem. To stack items within the same ItemContainer.
-	 * @param TargetItemGuid The Item you want to add Quantity to.
-	 * @param SourceItemGuid The Item you want to take Quantity from.
+	 * @param TargetHandle The Item you want to add Quantity to.
+	 * @param SourceHandle The Item you want to take Quantity from.
 	 * @param Quantity The amount from the SourceItem to add to the TargetItem.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Inventory Manager", DisplayName = "StackItems")
-	void K2_StackItems(FGuid TargetItemGuid, FGuid SourceItemGuid, const int32 Quantity);
+	void K2_StackItems(const FItemInstanceHandle TargetHandle, const FItemInstanceHandle SourceHandle, const int32 Quantity);
 
 	/**
 	 * Creates a new ItemContainer and initializes it.
@@ -279,13 +259,14 @@ public:
 	bool HasAuthority() const;
 
 protected:
-
 	virtual void OnContainerAdded(const FItemContainerInstance& ContainerInstance);
 	virtual void OnContainerRemoved(const FItemContainerInstance& ContainerInstance);
 
 	virtual void OnItemAdded(const FItemInstance& ItemInstance);
 	virtual void OnItemRemoved(const FItemInstance& ItemInstance);
 	virtual void OnItemChanged(const FItemInstance& ItemInstance);
+
+	virtual void OnRegister() override;
 
 private:
 	/** Cached value of whether our owner is a simulated Actor. */
@@ -309,9 +290,10 @@ private:
 	 * Adds new items to be managed by this ItemManager.
 	 * @param ItemContainer The Container to add the items to.
 	 * @param AddItemPlan The AddItemCollection to execute.
+	 * @param OutItemInstanceHandles A copy of the newly added and modified ItemInstances.
 	 * @return The Guids of each ItemInstance added/modified in the container. 
 	 */
-	TArray<FGuid> Internal_ExecuteAddItemPlan(UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan);
+	void ExecuteAddItemPlan(UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan, TArray<FItemInstanceHandle>& OutItemInstanceHandles);
 
 	/**
 	 * Moves an existing ItemInstance from one container to the new one following the AddItemPlan rule.
@@ -319,11 +301,11 @@ private:
 	 * @param ItemContainer The Container to move items to.
 	 * @param AddItemPlan The plan on how to add items to the Container.
 	 */
-	void Internal_ExecuteAddItemPlan_Move(FItemInstance* ItemInstance, UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan);
+	void ExecuteAddItemPlan_Move(FItemInstance* ItemInstance, UItemContainer* ItemContainer, const FAddItemPlan& AddItemPlan);
 
 	/** Adds an Item to the ItemList. */
-	void Internal_AddItem(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
+	static FItemInstance AddItemInternal(const FGuid ItemGuid, const TInstancedStruct<FItem>& Item, const int32 Quantity, UItemContainer* ItemContainer);
 
 	/** Removes an Item from the ItemList. */
-	void Internal_RemoveItem(FGuid ItemGuid, UItemContainer* ItemContainer);
+	static void RemoveItemInternal(FGuid ItemGuid, UItemContainer* ItemContainer);
 };

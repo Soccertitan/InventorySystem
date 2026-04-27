@@ -137,9 +137,12 @@ public:
 	// ItemInstance Accessor Functions
 	//---------------------------------------------------------------------------------------------------------
 	
+	/** Returns a mutable pointer of all items in the ItemContainer */
+	void GetItems(TArray<FItemInstance*> OutItemInstances) const;
+	
 	/** Returns a const reference of all items in the ItemContainer */
-	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "Inventory System|Item Container")
-	const TArray<FItemInstance>& GetItems() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "Inventory System|Item Container", DisplayName = "GetItems")
+	const TArray<FItemInstance>& K2_GetItems() const;
 
 	/**
 	 * @param Guid The unique Guid to search for in this Container.

@@ -33,10 +33,11 @@ public:
 	void SetItemDefinition(const UItemDefinition* ItemDefinition);
 
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
-	FGuid GetGuid() const { return ItemGuid; }
+	FItemInstanceHandle GetHandle() const { return Handle; }
 	
+	/** Returns the ItemContainer from the handle. Can be null! */
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
-	UItemContainer* GetItemContainer() const { return ItemContainerWeak.Get(); }
+	UItemContainer* GetItemContainer() const { return Handle.GetItemContainer(); }
 	
 	UFUNCTION(BlueprintPure, Category = "Viewmodel|ItemInstance")
 	const TInstancedStruct<FItem>& GetItem() const { return CachedItem; }
@@ -113,11 +114,7 @@ protected:
 	
 private:
 	/** The unique identifier for the item. */
-	FGuid ItemGuid;
-
-	/** The item container the item resides in. Can be null. */
-	UPROPERTY()
-	TWeakObjectPtr<UItemContainer> ItemContainerWeak;
+	FItemInstanceHandle Handle;
 	
 	/** Cached copy of the item. */
 	UPROPERTY()

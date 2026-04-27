@@ -32,6 +32,7 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	UInventoryManagerComponent* GetInventoryManagerComponent() const;
 	UItemContainer* GetItemContainer() const { return WeakItemContainer.Get(); }
 	UItemContainer* GetMovedToItemContainer() const { return WeakMovedToItemContainer.Get(); }
+	FItemInstanceHandle GetHandle() const { return FItemInstanceHandle(*this); }
 	bool IsValid() const;
 	
 	/** You must manually call this when the ItemInstance has been modified. */
@@ -53,12 +54,12 @@ struct INVENTORYSYSTEM_API FItemInstance : public FFastArraySerializerItem
 	
 	friend bool operator==(const FItemInstance& X, const FItemInstance& Y)
 	{
-		return X.GetGuid() == Y.GetGuid();
+		return X.GetHandle() == Y.GetHandle();
 	}
 	
 	friend bool operator!=(const FItemInstance& X, const FItemInstance& Y)
 	{
-		return X.GetGuid() != Y.GetGuid();
+		return X.GetHandle() != Y.GetHandle();
 	}
 
 private:
@@ -108,7 +109,7 @@ struct INVENTORYSYSTEM_API FItemInstanceContainer : public FFastArraySerializer
     }
 
     /** Adds an Item to the list. */
-    void AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity);
+    FItemInstance AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity);
 
     /** Removes an Item from the list. */
     void RemoveItem(const FGuid& Guid);

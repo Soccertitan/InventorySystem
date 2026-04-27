@@ -96,7 +96,17 @@ bool UItemContainer::IsAtMaxCapacity() const
 	return GetConsumedCapacity() >= GetMaxCapacity();
 }
 
-const TArray<FItemInstance>& UItemContainer::GetItems() const
+void UItemContainer::GetItems(TArray<FItemInstance*> OutItemInstances) const
+{
+	OutItemInstances.Empty(ItemInstanceContainer.GetNum());
+	
+	for (const FItemInstance& ItemInstance : ItemInstanceContainer.GetItems())
+	{
+		OutItemInstances.Add(const_cast<FItemInstance*>(&ItemInstance));
+	}
+}
+
+const TArray<FItemInstance>& UItemContainer::K2_GetItems() const
 {
 	return ItemInstanceContainer.GetItems();
 }
@@ -443,7 +453,7 @@ void UItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddIte
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// 3. We add item quantities to existing items that are not at their max capacity for a single stack.
+	// 3. Add item quantities to existing items that are not at their max capacity for a single stack.
 	//----------------------------------------------------------------------------------------------
 	for (FItemInstance*& ItemInstance : MatchingItemInstances)
 	{
@@ -461,7 +471,7 @@ void UItemContainer::GetAddItemPlan(const TInstancedStruct<FItem>& Item, FAddIte
 	}
 
 	//----------------------------------------------------------------------------------------------
-	// 4. We add as many new stacks as allowed to the ItemContainer.
+	// 4. Add as many new stacks as allowed to the ItemContainer.
 	//----------------------------------------------------------------------------------------------
 	int32 NewStacksAdded = 0;
 	while (RemainingQuantityToAdd > 0 && NewStacksAdded < RemainingItemStackCapacity)

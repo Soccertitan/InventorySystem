@@ -25,22 +25,22 @@ FItemSaveData::FItemSaveData(FItemInstance& ItemInstance)
 	ItemInstance.GetItemPtr()->Serialize(Ar);
 }
 
-FItemContainerSaveData::FItemContainerSaveData(const FItemContainerInstance& ItemContainerInstance)
+FItemContainerSaveData::FItemContainerSaveData(UItemContainer* ItemContainer)
 {
-	if (!ItemContainerInstance.GetItemContainer())
+	if (!ItemContainer)
 	{
 		return;
 	}
 
-	ContainerTag = ItemContainerInstance.GetItemContainer()->GetItemContainerTag();
-	ContainerClass = ItemContainerInstance.GetItemContainer()->GetClass();
+	ContainerTag = ItemContainer->GetItemContainerTag();
+	ContainerClass = ItemContainer->GetClass();
 
 	FMemoryWriter MemWriter(ByteData);
 	FObjectAndNameAsStringProxyArchive Ar(MemWriter, true);
 	Ar.ArIsSaveGame = true;
-	ItemContainerInstance.GetItemContainer()->Serialize(Ar);
+	ItemContainer->Serialize(Ar);
 
-	for (const FItemInstance& ItemInstance : ItemContainerInstance.GetItemContainer()->GetItems())
+	for (const FItemInstance& ItemInstance : ItemContainer->K2_GetItems())
 	{
 		InventoryItemsSaveData.Add(*const_cast<FItemInstance*>(&ItemInstance));
 	}

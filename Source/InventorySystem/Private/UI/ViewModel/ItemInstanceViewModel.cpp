@@ -23,14 +23,13 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
 	if (ItemInstance.IsValid())
 	{
 		bool bShouldLoadItemDefinition = false;
-		if (ItemInstance.GetGuid() != ItemGuid)
+		if (ItemInstance.GetHandle() != Handle)
 		{
 			ItemDefinitionStreamableHandle.Reset();
 			bShouldLoadItemDefinition = true;
-			ItemGuid = ItemInstance.GetGuid();
+			Handle = ItemInstance.GetHandle();
 		}
-
-		ItemContainerWeak = ItemInstance.GetItemContainer();
+		
 		OnItemInstanceSet(ItemInstance);
 
 		SetItem(ItemInstance.GetItem(), bShouldLoadItemDefinition);

@@ -100,7 +100,7 @@ int32 FItemInstance::GetQuantity() const
 // ItemInstanceContainer
 //----------------------------------------------------------------------------------------
 
-void FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity)
+FItemInstance FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<FItem>& Item, const int32 Quantity)
 {
 	check(Guid.IsValid());
 	check(Item.IsValid() && !Item.Get().GetItemDefinition().IsNull());
@@ -114,6 +114,7 @@ void FItemInstanceContainer::AddItem(const FGuid& Guid, const TInstancedStruct<F
 
 	Owner->Internal_OnItemAdded(NewItem);
 	MarkItemDirty(NewItem);
+	return NewItem;
 }
 
 void FItemInstanceContainer::RemoveItem(const FGuid& Guid)

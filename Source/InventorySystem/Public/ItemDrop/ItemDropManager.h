@@ -8,6 +8,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "ItemDropManager.generated.h"
 
+struct FItemInstanceHandle;
 struct FItemInstance;
 struct FItem;
 struct FItemDropParams;
@@ -30,7 +31,6 @@ class INVENTORYSYSTEM_API AItemDropManager : public AInfo
 	
 public:
 	AItemDropManager();
-	virtual void BeginPlay() override;
 
 	/**
 	 * Takes the passed in Item and tries to represent it in the world.
@@ -40,7 +40,7 @@ public:
 	 * @return The newly created ItemDropActor.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Item Drop Manager")
-	AItemDrop* TryCreateItemDrop(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params);
+	AItemDrop* CreateItemDrop(UPARAM(ref) const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params);
 
 	/**
 	 * Takes the ItemInstance and consumes the specified QuantityToDrop.
@@ -50,13 +50,14 @@ public:
 	 * @return The newly created ItemDropActor.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Inventory System|Item Drop Manager")
-	AItemDrop* TryCreateItemDropFromItemInstance(
+	AItemDrop* CreateItemDropFromItemInstance(
 		UPARAM(ref) const FItemInstance& ItemInstance,
 		const FItemDropParams& Params,
 		const int32 QuantityToDrop = 1);
 
 protected:
-
+	virtual void BeginPlay() override;
+	
 	/** The maximum number of ItemDropActors allowed to be spawned in the world. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxItemDrops = 100;
@@ -72,7 +73,7 @@ private:
 	TObjectPtr<UItemContainer> InventoryContainer_Drop;
 
 	/** Creates the ItemDrop and adds it to the array. */
-	AItemDrop* Internal_CreateItemDrop(const FGuid ItemGuid, const FItemDropParams& Params);
+	AItemDrop* CreateItemDropInternal(const FItemInstanceHandle& Handle, const FItemDropParams& Params);
 
 	/** If at MaxItemDrops, makes enough space for one new item drop. */
 	void ClearItemDrops();
@@ -80,5 +81,5 @@ private:
 	UFUNCTION()
 	void OnItemRemoved(const FItemInstance& ItemInstance);
 
-	void Internal_RemoveItemDrop(AItemDrop* ItemDrop);
+	void RemoveItemDropInternal(AItemDrop* ItemDrop);
 };

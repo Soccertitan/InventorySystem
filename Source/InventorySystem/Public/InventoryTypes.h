@@ -135,6 +135,35 @@ private:
 	void UpdateAmountGiven(int32 NewValue);
 };
 
+/** Data to retrieve an ItemInstance. */
+USTRUCT(BlueprintType)
+struct INVENTORYSYSTEM_API FItemInstanceHandle
+{
+	GENERATED_BODY()
+	FItemInstanceHandle(){}
+	FItemInstanceHandle(const FItemInstance& ItemInstance);
+	
+	bool IsValid() const;
+	FGuid GetGuid() const { return ItemGuid; }
+	UItemContainer* GetItemContainer() const { return ItemContainer.Get(); }
+	
+	friend bool operator==(const FItemInstanceHandle& X, const FItemInstanceHandle& Y)
+	{
+		return X.GetGuid() == Y.GetGuid() && X.GetItemContainer() == Y.GetItemContainer();
+	}
+	
+	friend bool operator!=(const FItemInstanceHandle& X, const FItemInstanceHandle& Y)
+	{
+		return X.GetGuid() != Y.GetGuid() || X.GetItemContainer() != Y.GetItemContainer();
+	}
+	
+private:
+	FGuid ItemGuid;
+	
+	UPROPERTY()
+	TWeakObjectPtr<UItemContainer> ItemContainer;
+};
+
 /**
  * Represents the items added to an ItemContainer.
  */
@@ -143,11 +172,11 @@ struct FAddItemPlanResult
 {
 	GENERATED_BODY()
 	FAddItemPlanResult(){}
-	FAddItemPlanResult(const FAddItemPlan& InPlan, const TArray<FGuid>& InItemGuids);
+	FAddItemPlanResult(const FAddItemPlan& InPlan, const TArray<FItemInstanceHandle>& InItemInstanceHandles);
 
-	/** The ItemGuids of the items added or modified in the ItemManager. */
+	/** An array of Handles that were added or modified in the ItemManager. */
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FGuid> ItemGuids;
+	TArray<FItemInstanceHandle> ItemInstanceHandles;
 
 	/** The amount of the item that we tried to add */
 	UPROPERTY(BlueprintReadOnly)

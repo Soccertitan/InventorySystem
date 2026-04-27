@@ -48,7 +48,7 @@ struct INVENTORYSYSTEM_API FItemContainerSaveData
 
 	FItemContainerSaveData(){}
 
-	FItemContainerSaveData(const FItemContainerInstance& ItemContainerInstance);
+	FItemContainerSaveData(UItemContainer* ItemContainer);
 
 	/** The InventoryContainers lookup tag. */
 	UPROPERTY(BlueprintReadOnly)

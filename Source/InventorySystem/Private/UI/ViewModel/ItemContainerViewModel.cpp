@@ -40,12 +40,12 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemRemoved);
 		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemChanged);
 		
-		const TArray<FItemInstance>& Items = GetItemContainer()->GetItems();
+		const TArray<FItemInstance>& Items = GetItemContainer()->K2_GetItems();
 		ItemInstanceViewModels.Empty(Items.Num());
 		if (Items.Num() > 0)
 		{
 			SetIsLoadingInitialItems(true);
-			LoadItemDefinitions(GetItemContainer()->GetItems());
+			LoadItemDefinitions(GetItemContainer()->K2_GetItems());
 		}
 		else
 		{
@@ -151,7 +151,7 @@ void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemIn
 {
 	for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 	{
-		if (ItemInstanceViewModels[idx]->GetGuid() == ItemInstance.GetGuid())
+		if (ItemInstanceViewModels[idx]->GetHandle().GetGuid() == ItemInstance.GetGuid())
 		{
 			UItemInstanceViewModel* RemovedViewModel = ItemInstanceViewModels[idx];
 			ItemInstanceViewModels.RemoveAtSwap(idx);
@@ -170,7 +170,7 @@ void UItemContainerViewModel::Internal_OnItemChanged(const FItemInstance& ItemIn
 {
 	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
 	{
-		if (ItemInstanceViewModel->GetGuid() == ItemInstance.GetGuid())
+		if (ItemInstanceViewModel->GetHandle().GetGuid() == ItemInstance.GetGuid())
 		{
 			ItemInstanceViewModel->SetItemInstance(ItemInstance);
 			OnItemChanged(ItemInstanceViewModel);

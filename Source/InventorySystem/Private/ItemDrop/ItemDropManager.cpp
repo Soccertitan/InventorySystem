@@ -31,23 +31,24 @@ void AItemDropManager::BeginPlay()
 	}
 }
 
-AItemDrop* AItemDropManager::TryCreateItemDrop(const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params)
+AItemDrop* AItemDropManager::CreateItemDrop(const TInstancedStruct<FItem>& Item, const int32 Quantity, const FItemDropParams& Params)
 {
 	if (!HasAuthority() || !Params.IsValid())
 	{
 		return nullptr;
 	}
-
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByTag(Item, Quantity, UInventorySettings::GetDefaultItemContainerTag());
-	if (Result.ItemGuids.IsEmpty())
+	
+	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetDefaultItemContainerTag());
+	FAddItemPlanResult Result = InventoryManagerComponent->AddItem(Item, Quantity, ItemContainer);
+	if (Result.ItemInstanceHandles.IsEmpty())
 	{
 		return nullptr;
 	}
 
-	return Internal_CreateItemDrop(Result.ItemGuids[0], Params);
+	return CreateItemDropInternal(Result.ItemInstanceHandles[0], Params);
 }
 
-AItemDrop* AItemDropManager::TryCreateItemDropFromItemInstance(const FItemInstance& ItemInstance,
+AItemDrop* AItemDropManager::CreateItemDropFromItemInstance(const FItemInstance& ItemInstance,
 	const FItemDropParams& Params, const int32 QuantityToDrop)
 {
 	if (!HasAuthority() || !Params.IsValid() || !ItemInstance.IsValid())
@@ -55,28 +56,29 @@ AItemDrop* AItemDropManager::TryCreateItemDropFromItemInstance(const FItemInstan
 		return nullptr;
 	}
 
-	int32 Quantity = ItemInstance.GetItemContainer()->GetInventoryManagerComponent()->
-		ConsumeItemByGuid(ItemInstance.GetGuid(), QuantityToDrop);
+	int32 Quantity = ItemInstance.GetInventoryManagerComponent()->
+		K2_ConsumeItem(ItemInstance.GetHandle(), QuantityToDrop);
 	if (Quantity <= 0)
 	{
 		return nullptr;
 	}
 
-	FAddItemPlanResult Result = InventoryManagerComponent->TryAddItemByTag(ItemInstance.GetItem(), Quantity, UInventorySettings::GetDefaultItemContainerTag());
-	if (Result.ItemGuids.IsEmpty())
+	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetDefaultItemContainerTag());
+	FAddItemPlanResult Result = InventoryManagerComponent->AddItem(ItemInstance.GetItem(), Quantity, ItemContainer);
+	if (Result.ItemInstanceHandles.IsEmpty())
 	{
 		return nullptr;
 	}
 
-	return Internal_CreateItemDrop(Result.ItemGuids[0], Params);
+	return CreateItemDropInternal(Result.ItemInstanceHandles[0], Params);
 }
 
 void AItemDropManager::RemoveItemDrop(AItemDrop* ItemDrop)
 {
 	if (IsValid(ItemDrop))
 	{
-		TInstancedStruct<FItem> Result = InventoryManagerComponent->TryRemoveItemByGuid(ItemDrop->ItemGuid);
-		Internal_RemoveItemDrop(ItemDrop);
+		InventoryManagerComponent->K2_RemoveItem(ItemDrop->ItemInstanceHandle);
+		RemoveItemDropInternal(ItemDrop);
 	}
 }
 
@@ -91,7 +93,7 @@ void AItemDropManager::ClearItemDrops()
 	}
 }
 
-AItemDrop* AItemDropManager::Internal_CreateItemDrop(const FGuid ItemGuid, const FItemDropParams& Params)
+AItemDrop* AItemDropManager::CreateItemDropInternal(const FItemInstanceHandle& Handle, const FItemDropParams& Params)
 {
 	ClearItemDrops();
 
@@ -105,7 +107,7 @@ AItemDrop* AItemDropManager::Internal_CreateItemDrop(const FGuid ItemGuid, const
 		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 
 	NewItemDrop->ItemDropManager = this;
-	NewItemDrop->InitializeItemDrop(ItemGuid, Params.Context);
+	NewItemDrop->InitializeItemDrop(Handle, Params.Context);
 	ItemDrops.Add(NewItemDrop);
 	UGameplayStatics::FinishSpawningActor(NewItemDrop, Transform);
 	return NewItemDrop;
@@ -115,15 +117,15 @@ void AItemDropManager::OnItemRemoved(const FItemInstance& ItemInstance)
 {
 	for (TObjectPtr<AItemDrop>& ItemDrop : ItemDrops)
 	{
-		if (ItemDrop->ItemGuid == ItemInstance.GetGuid())
+		if (ItemDrop->ItemInstanceHandle == ItemInstance.GetHandle())
 		{
-			Internal_RemoveItemDrop(ItemDrop);
+			RemoveItemDropInternal(ItemDrop);
 			return;
 		}
 	}
 }
 
-void AItemDropManager::Internal_RemoveItemDrop(AItemDrop* ItemDrop)
+void AItemDropManager::RemoveItemDropInternal(AItemDrop* ItemDrop)
 {
 	ItemDrops.Remove(ItemDrop);
 	ItemDrop->Destroy();
