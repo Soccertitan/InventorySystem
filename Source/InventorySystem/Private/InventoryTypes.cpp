@@ -4,6 +4,7 @@
 #include "InventoryTypes.h"
 
 #include "InventoryFastTypes.h"
+#include "ItemContainer/ItemContainer.h"
 
 
 int32 FQuantityLimit::GetMaxQuantity() const
@@ -113,6 +114,15 @@ bool FItemInstanceHandle::IsValid() const
 	}
 	
 	return true;
+}
+
+FItemInstance* FItemInstanceHandle::GetItemInstance() const
+{
+	if (GetItemContainer())
+	{
+		return GetItemContainer()->FindItemByGuid(GetGuid());
+	}
+	return nullptr;
 }
 
 FAddItemPlanResult::FAddItemPlanResult(const FAddItemPlan& InPlan, const TArray<FItemInstanceHandle>& InItemInstanceHandles)

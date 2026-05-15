@@ -146,6 +146,7 @@ struct INVENTORYSYSTEM_API FItemInstanceHandle
 	bool IsValid() const;
 	FGuid GetGuid() const { return ItemGuid; }
 	UItemContainer* GetItemContainer() const { return ItemContainer.Get(); }
+	FItemInstance* GetItemInstance() const;
 	
 	friend bool operator==(const FItemInstanceHandle& X, const FItemInstanceHandle& Y)
 	{
