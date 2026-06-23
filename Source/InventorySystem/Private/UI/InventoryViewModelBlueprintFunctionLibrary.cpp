@@ -6,7 +6,7 @@
 #include "InventoryBlueprintFunctionLibrary.h"
 #include "InventoryFastTypes.h"
 #include "Engine/AssetManager.h"
-#include "Item/Fragment/ItemFragment_UI.h"
+#include "Item/Fragment/ItemDefinitionFragment_UI.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
 UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemInstanceViewModel(UObject* Owner, const FItemInstance& ItemInstance)
@@ -16,7 +16,7 @@ UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemI
 		TSubclassOf<UItemInstanceViewModel> ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 		if (ItemInstance.IsValid())
 		{
-			if (const FItemFragment_UI* UIFrag = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem())->FindFragmentByType<FItemFragment_UI>())
+			if (const FItemDefinitionFragment_UI* UIFrag = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem())->FindFragmentByType<FItemDefinitionFragment_UI>())
 			{
 				if (!UIFrag->ItemInstanceViewModelClass.Get())
 				{

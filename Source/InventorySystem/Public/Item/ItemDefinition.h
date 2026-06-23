@@ -11,19 +11,18 @@
 
 
 /**
- * A struct that represents custom static information in an ItemDefinition. Also initializes default values on the
- * created Item.
+ * A struct that represents custom static information in an ItemDefinition.
  */
 USTRUCT(BlueprintType)
-struct INVENTORYSYSTEM_API FItemFragment
+struct INVENTORYSYSTEM_API FItemDefinitionFragment
 {
 	GENERATED_BODY()
 
-	FItemFragment(){}
-	virtual ~FItemFragment() {}
+	FItemDefinitionFragment(){}
+	virtual ~FItemDefinitionFragment() {}
 
 	/** Called when an item is created from an ItemDefinition. */
-	virtual void SetDefaultValues(TInstancedStruct<FItem>& Item) const {}
+	virtual TInstancedStruct<FItemFragment> GetItemFragment() const { return TInstancedStruct<FItemFragment>(); }
 
 	/**
 	 * Called from the ItemDefinition when gathering the AssetTags for the AssetRegistrySearch functionality. Follow this
@@ -42,11 +41,6 @@ struct INVENTORYSYSTEM_API FItemFragment
 	 * added successfully and can be queried.
 	 */
 	virtual void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const {}
-
-protected:
-
-	/** Adds an ItemShard to the Item. */
-	static void AddItemShard(TInstancedStruct<FItem>& Item, const TInstancedStruct<FItemShard>& Shard);
 };
 
 /**
@@ -80,7 +74,7 @@ public:
 	 * Defines custom item functionality.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition", meta = (FullyExpand=true, ExcludeBaseStruct))
-	TArray<TInstancedStruct<FItemFragment>> Fragments;
+	TArray<TInstancedStruct<FItemDefinitionFragment>> Fragments;
 
 	/** If set to false, this item should not be created. Useful for marking a deprecated item. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition", AdvancedDisplay, AssetRegistrySearchable)
@@ -90,17 +84,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Definition", AdvancedDisplay)
 	TInstancedStruct<FItem> ItemClass;
 
-	template<typename T> requires std::derived_from<T, FItemFragment>
+	template<typename T> requires std::derived_from<T, FItemDefinitionFragment>
 	const T* FindFragmentByType() const;
 };
 
 /**
  * @return A const pointer to the first Fragment that matches the type.
  */
-template <typename T> requires std::derived_from<T, FItemFragment>
+template <typename T> requires std::derived_from<T, FItemDefinitionFragment>
 const T* UItemDefinition::FindFragmentByType() const
 {
-	for (const TInstancedStruct<FItemFragment>& Fragment : Fragments)
+	for (const TInstancedStruct<FItemDefinitionFragment>& Fragment : Fragments)
 	{
 		if (const T* FragmentPtr = Fragment.GetPtr<T>())
 		{

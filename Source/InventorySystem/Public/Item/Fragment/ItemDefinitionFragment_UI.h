@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Item/ItemDefinition.h"
-#include "ItemFragment_UI.generated.h"
+#include "ItemDefinitionFragment_UI.generated.h"
 
 class UItemInstanceViewModel;
 
@@ -12,11 +12,11 @@ class UItemInstanceViewModel;
  * Describes information that is shown to a user.
  */
 USTRUCT(BlueprintType)
-struct FItemFragment_UI : public FItemFragment
+struct FItemDefinitionFragment_UI : public FItemDefinitionFragment
 {
 	GENERATED_BODY()
 
-	FItemFragment_UI();
+	FItemDefinitionFragment_UI();
 
 	/** User facing description of the item */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item|UI", meta = (MultiLine=true))

@@ -52,21 +52,21 @@ const UItemDefinition* UInventoryBlueprintFunctionLibrary::GetItemDefinition(con
 	return nullptr;
 }
 
-TInstancedStruct<FItemShard> UInventoryBlueprintFunctionLibrary::K2_FindItemShard(const TInstancedStruct<FItem>& Item, const UScriptStruct* FragmentType)
+TInstancedStruct<FItemFragment> UInventoryBlueprintFunctionLibrary::K2_FindItemFragment(const TInstancedStruct<FItem>& Item, const UScriptStruct* FragmentType)
 {
 	if (Item.IsValid() && FragmentType)
 	{
 		const FItem* ItemPtr = Item.GetPtr<FItem>();
-		return ItemPtr->FindShardByScriptStruct(FragmentType);
+		return ItemPtr->FindFragmentByScriptStruct(FragmentType);
 	}
-	return TInstancedStruct<FItemShard>();
+	return TInstancedStruct<FItemFragment>();
 }
 
-TInstancedStruct<FItemFragment> UInventoryBlueprintFunctionLibrary::K2_FindItemFragment(const UItemDefinition* ItemDefinition, const UScriptStruct* FragmentType)
+TInstancedStruct<FItemDefinitionFragment> UInventoryBlueprintFunctionLibrary::K2_FindItemDefinitionFragment(const UItemDefinition* ItemDefinition, const UScriptStruct* FragmentType)
 {
 	if (ItemDefinition && FragmentType)
 	{
-		for (const TInstancedStruct<FItemFragment>& Fragment : ItemDefinition->Fragments)
+		for (const TInstancedStruct<FItemDefinitionFragment>& Fragment : ItemDefinition->Fragments)
 		{
 			if (Fragment.IsValid() && Fragment.GetScriptStruct()->IsChildOf(FragmentType))
 			{
@@ -74,5 +74,5 @@ TInstancedStruct<FItemFragment> UInventoryBlueprintFunctionLibrary::K2_FindItemF
 			}
 		}
 	}
-	return TInstancedStruct<FItemFragment>();
+	return TInstancedStruct<FItemDefinitionFragment>();
 }

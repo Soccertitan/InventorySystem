@@ -5,11 +5,6 @@
 
 #include "UObject/AssetRegistryTagsContext.h"
 
-void FItemFragment::AddItemShard(TInstancedStruct<FItem>& Item, const TInstancedStruct<FItemShard>& Shard)
-{
-	FItem* ItemPtr = Item.GetMutablePtr<FItem>();
-	ItemPtr->Shards.Add(Shard);
-}
 
 UItemDefinition::UItemDefinition()
 {
@@ -32,9 +27,9 @@ void UItemDefinition::GetAssetRegistryTags(FAssetRegistryTagsContext Context) co
 	RegistryTag.Value = OwnedTags.ToString();
 	Context.AddTag(RegistryTag);
 
-	for (const TInstancedStruct<FItemFragment>& Fragment : Fragments)
+	for (const TInstancedStruct<FItemDefinitionFragment>& Fragment : Fragments)
 	{
-		if (const FItemFragment* Ptr = Fragment.GetPtr<FItemFragment>())
+		if (const FItemDefinitionFragment* Ptr = Fragment.GetPtr<FItemDefinitionFragment>())
 		{
 			Ptr->GetAssetRegistryTags(Context);
 		}

@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Item/ItemDefinition.h"
-#include "ItemFragment_QuantityLimit.generated.h"
+#include "ItemDefinitionFragment_QuantityLimit.generated.h"
 
 /**
  * Describes the limitation for stacking and adding items.
  */
 USTRUCT(BlueprintType)
-struct FItemFragment_QuantityLimit : public FItemFragment
+struct FItemDefinitionFragment_QuantityLimit : public FItemDefinitionFragment
 {
 	GENERATED_BODY()
 

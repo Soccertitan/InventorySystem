@@ -1,19 +1,19 @@
 ﻿// Copyright Soccertitan 2025
 
 
-#include "Item/Fragment/ItemFragment_UI.h"
+#include "Item/Fragment/ItemDefinitionFragment_UI.h"
 
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
 
-FItemFragment_UI::FItemFragment_UI()
+FItemDefinitionFragment_UI::FItemDefinitionFragment_UI()
 {
 	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 }
 
-void FItemFragment_UI::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
+void FItemDefinitionFragment_UI::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
 {
-	FItemFragment::GetAssetRegistryTags(Context);
+	FItemDefinitionFragment::GetAssetRegistryTags(Context);
 
 	UObject::FAssetRegistryTag RegistryTag;
 	RegistryTag.Type = UObject::FAssetRegistryTag::TT_Alphabetical;

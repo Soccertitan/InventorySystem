@@ -9,7 +9,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
 #include "Item/ItemDefinition.h"
-#include "Item/Fragment/ItemFragment_UI.h"
+#include "Item/Fragment/ItemDefinitionFragment_UI.h"
 #include "ItemContainer/ItemContainer.h"
 #include "UI/ItemViewModelInterface.h"
 
@@ -76,7 +76,7 @@ UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* 
 		}
 		if (ItemDefinition)
 		{
-			if (const FItemFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
+			if (const FItemDefinitionFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemDefinitionFragment_UI>())
 			{
 				WidgetClass = Fragment->WidgetClass.Get();
 				if (!WidgetClass && !Fragment->WidgetClass.IsNull())
@@ -145,7 +145,7 @@ void UItemInstanceViewModel::OnItemSet_Implementation(const TInstancedStruct<FIt
 void UItemInstanceViewModel::OnItemDefinitionSet_Implementation(const UItemDefinition* ItemDefinition)
 {
 	SetItemName(ItemDefinition->ItemName);
-	if (const FItemFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemFragment_UI>())
+	if (const FItemDefinitionFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemDefinitionFragment_UI>())
 	{
 		SetDescription(UIFrag->Description);
 		SetIcon(UIFrag->Icon);

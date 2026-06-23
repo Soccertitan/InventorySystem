@@ -10,7 +10,7 @@
 #include "ItemContainer/Rules/ItemContainerRule_AddItem.h"
 #include "ItemContainer/Rules/ItemContainerRule_ItemQuantity.h"
 #include "ItemContainer/Rules/ItemContainerRule_RemoveItem.h"
-#include "Item/Fragment/ItemFragment_QuantityLimit.h"
+#include "Item/Fragment/ItemDefinitionFragment_QuantityLimit.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/ViewModel/ItemContainerViewModel.h"
 
@@ -364,8 +364,8 @@ int32 UItemContainer::GetItemQuantityLimit(const TInstancedStruct<FItem>& Item) 
 			}
 		}
 
-		if (const FItemFragment_QuantityLimit* Fragment =
-			UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)->FindFragmentByType<FItemFragment_QuantityLimit>())
+		if (const FItemDefinitionFragment_QuantityLimit* Fragment =
+			UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)->FindFragmentByType<FItemDefinitionFragment_QuantityLimit>())
 		{
 			Result = FMath::Min(Result, Fragment->Item.GetMaxQuantity());
 		}
@@ -388,8 +388,8 @@ int32 UItemContainer::GetItemStackQuantityLimit(const TInstancedStruct<FItem>& I
 			}
 		}
 
-		if (const FItemFragment_QuantityLimit* Fragment = UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)
-			->FindFragmentByType<FItemFragment_QuantityLimit>())
+		if (const FItemDefinitionFragment_QuantityLimit* Fragment = UInventoryBlueprintFunctionLibrary::GetItemDefinition(Item)
+			->FindFragmentByType<FItemDefinitionFragment_QuantityLimit>())
 		{
 			Result = FMath::Min(Result, Fragment->ItemContainer.GetMaxQuantity());
 		}

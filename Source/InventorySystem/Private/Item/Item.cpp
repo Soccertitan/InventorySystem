@@ -6,28 +6,33 @@
 #include "Item/ItemDefinition.h"
 
 
+bool FItemFragment::IsMatching(const TInstancedStruct<FItemFragment>& OtherFragment) const
+{
+	return this->StaticStruct() == OtherFragment.GetScriptStruct();
+}
+
 FItem::FItem()
 {
 }
 
-bool FItem::IsMatching(const TInstancedStruct<FItem>& Item) const
+bool FItem::IsMatching(const TInstancedStruct<FItem>& OtherItem) const
 {
-	if (!Item.IsValid())
+	if (!OtherItem.IsValid())
 	{
 		return false;
 	}
 	
-	if (Item.GetPtr<FItem>()->ItemDefinition != ItemDefinition)
+	if (OtherItem.GetPtr<FItem>()->ItemDefinition != ItemDefinition)
 	{
 		return false;
 	}
 
-	if (Item.GetPtr<FItem>()->GameplayTagStackContainer != GameplayTagStackContainer)
+	if (OtherItem.GetPtr<FItem>()->GameplayTagStackContainer != GameplayTagStackContainer)
 	{
 		return false;
 	}
 
-	if (!AreShardsEqual(Item))
+	if (!AreFragmentsEqual(OtherItem))
 	{
 		return false;
 	}
@@ -35,18 +40,18 @@ bool FItem::IsMatching(const TInstancedStruct<FItem>& Item) const
 	return true;
 }
 
-bool FItem::AreShardsEqual(const TInstancedStruct<FItem>& Item) const
+bool FItem::AreFragmentsEqual(const TInstancedStruct<FItem>& OtherItem) const
 {
-	const FItem* TestItemPtr = Item.GetPtr<FItem>();
+	const FItem* OtherItemPtr = OtherItem.GetPtr<FItem>();
 
-	if (Shards.Num() != TestItemPtr->Shards.Num())
+	if (Fragments.Num() != OtherItemPtr->Fragments.Num())
 	{
 		return false;
 	}
 
-	for (int32 Index = 0; Index < Shards.Num(); Index++)
+	for (int32 Index = 0; Index < Fragments.Num(); Index++)
 	{
-		if (!Shards[Index].Get<FItemShard>().IsMatching(TestItemPtr->Shards[Index]))
+		if (!Fragments[Index].Get<FItemFragment>().IsMatching(OtherItemPtr->Fragments[Index]))
 		{
 			return false;
 		}
@@ -55,16 +60,16 @@ bool FItem::AreShardsEqual(const TInstancedStruct<FItem>& Item) const
 	return true;
 }
 
-TInstancedStruct<FItemShard> FItem::FindShardByScriptStruct(const UScriptStruct* Struct) const
+TInstancedStruct<FItemFragment> FItem::FindFragmentByScriptStruct(const UScriptStruct* Struct) const
 {
-	for (const TInstancedStruct<FItemShard>& Shard : Shards)
+	for (const TInstancedStruct<FItemFragment>& Fragment : Fragments)
 	{
-		if (Shard.IsValid() && Shard.GetScriptStruct()->IsChildOf(Struct))
+		if (Fragment.IsValid() && Fragment.GetScriptStruct()->IsChildOf(Struct))
 		{
-			return Shard;
+			return Fragment;
 		}
 	}
-	return TInstancedStruct<FItemShard>();
+	return TInstancedStruct<FItemFragment>();
 }
 
 void FItem::Initialize(const UItemDefinition* InItemDefinition)

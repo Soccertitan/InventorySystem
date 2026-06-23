@@ -9,7 +9,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "InventoryBlueprintFunctionLibrary.generated.h"
 
-struct FItemFragment;
+struct FItemDefinitionFragment;
 class UItemDefinition;
 class UInventoryManagerComponent;
 
@@ -52,10 +52,10 @@ public:
 	 * @param FragmentType The type of item fragment to search for.
 	 * @return A copy of the Fragment.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Shard")
-	static TInstancedStruct<FItemShard> K2_FindItemShard(
+	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Fragment")
+	static TInstancedStruct<FItemFragment> K2_FindItemFragment(
 		UPARAM(ref) const TInstancedStruct<FItem>& Item,
-		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemShard")) const UScriptStruct* FragmentType);
+		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemFragment")) const UScriptStruct* FragmentType);
 
 	/**
 	 * Iterates through an ItemDefinition's Fragments and finds the one that is a child of FragmentType.
@@ -63,8 +63,8 @@ public:
 	 * @param FragmentType The type of fragment to search for.
 	 * @return A copy of ItemFragment of the FragmentType.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Fragment")
-	static TInstancedStruct<FItemFragment> K2_FindItemFragment(
+	UFUNCTION(BlueprintCallable, Category = "Inventory System|Item", DisplayName = "Find Item Definition Fragment")
+	static TInstancedStruct<FItemDefinitionFragment> K2_FindItemDefinitionFragment(
 		const UItemDefinition* ItemDefinition,
-		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemFragment")) const UScriptStruct* FragmentType);
+		UPARAM(meta = (MetaStruct="/Script/InventorySystem.ItemDefinitionFragment")) const UScriptStruct* FragmentType);
 };

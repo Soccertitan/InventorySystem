@@ -199,9 +199,13 @@ TInstancedStruct<FItem> UInventoryManagerComponent::CreateItem(const UItemDefini
 	Result.InitializeAsScriptStruct(ItemDefinition->ItemClass.GetScriptStruct());
 	FItem* ItemPtr = Result.GetMutablePtr<FItem>();
 	ItemPtr->Initialize(ItemDefinition);
-	for (const TInstancedStruct<FItemFragment>& Fragment : ItemDefinition->Fragments)
+	for (const TInstancedStruct<FItemDefinitionFragment>& Fragment : ItemDefinition->Fragments)
 	{
-		Fragment.Get<FItemFragment>().SetDefaultValues(Result);
+		TInstancedStruct<FItemFragment> NewItemFragment = Fragment.Get<FItemDefinitionFragment>().GetItemFragment();
+		if (NewItemFragment.IsValid())
+		{
+			ItemPtr->Fragments.Add(NewItemFragment);
+		}
 	}
 	return Result;
 }
