@@ -36,7 +36,7 @@ bool UInventoryViewModelBlueprintFunctionLibrary::DoesItemHaveUIFragment(const T
 {
 	FAssetData AssetData;
 	bool Result;
-	FPrimaryAssetId AssetId = Item.Get<FItem>().GetItemDefinition()->GetPrimaryAssetId();
+	FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(Item.Get<FItem>().GetItemDefinition().ToSoftObjectPath());
 	UAssetManager::Get().GetPrimaryAssetData(AssetId, AssetData);
 	AssetData.GetTagValue("ItemFragment_UI", Result);
 	return Result;

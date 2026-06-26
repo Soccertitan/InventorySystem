@@ -11,6 +11,7 @@
 #include "ItemContainer/ItemContainer.h"
 #include "Engine/AssetManager.h"
 #include "Net/UnrealNetwork.h"
+#include "Serialization/MemoryReader.h"
 #include "Serialization/ObjectAndNameAsStringProxyArchive.h"
 
 
@@ -528,7 +529,7 @@ void UInventoryManagerComponent::LoadSavedData(const TArray<FItemContainerSaveDa
 
 				FAssetData AssetData;
 				bool bSpawnable = true;
-				FPrimaryAssetId AssetId = ItemData.ItemDefinition->GetPrimaryAssetId();
+				FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(ItemData.ItemDefinition.ToSoftObjectPath());
 				UAssetManager::Get().GetPrimaryAssetData(AssetId, AssetData);
 				AssetData.GetTagValue(bSpawnableName, bSpawnable);
 

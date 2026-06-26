@@ -104,7 +104,7 @@ void UItemContainerViewModel::LoadItemDefinitions(const TArray<FItemInstance>& I
 	TArray<FPrimaryAssetId> AssetList;
 	for (const FItemInstance& ItemInstance : ItemInstances)
 	{
-		FPrimaryAssetId AssetId = ItemInstance.GetItem().Get<FItem>().GetItemDefinition()->GetPrimaryAssetId();
+		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(ItemInstance.GetItem().Get<FItem>().GetItemDefinition().ToSoftObjectPath());
 		if (AssetId.IsValid())
 		{
 			AssetList.AddUnique(AssetId);
