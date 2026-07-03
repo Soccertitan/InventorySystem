@@ -3,11 +3,13 @@
 
 #include "Item/ItemDefinition.h"
 
+#include "UI/ViewModel/ItemInstanceViewModel.h"
 #include "UObject/AssetRegistryTagsContext.h"
 
 
 UItemDefinition::UItemDefinition()
 {
+	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 	ItemClass.InitializeAsScriptStruct(FItem::StaticStruct());
 }
 

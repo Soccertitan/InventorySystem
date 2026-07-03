@@ -10,6 +10,10 @@
 #include "ItemDefinition.generated.h"
 
 
+class UItemInstanceComponentViewModel;
+class UUserWidget;
+class UItemInstanceViewModel;
+
 /**
  * A struct that represents custom static information in an ItemDefinition.
  */
@@ -23,6 +27,12 @@ struct INVENTORYSYSTEM_API FItemDefinitionFragment
 
 	/** Called when an item is created from an ItemDefinition. */
 	virtual TInstancedStruct<FItemFragment> GetItemFragment() const { return TInstancedStruct<FItemFragment>(); }
+	
+	/** 
+	 * Called on each fragment in the ItemDefinition when a new ItemDefinition is set. 
+	 * @note If planning to expose via a UPROPERTY. Ensure the meta = (AssetBundles = "ViewModel") to have the 
+	 * ItemInstanceViewModel have the loaded component ready on construction. */
+	virtual TSubclassOf<UItemInstanceComponentViewModel> GetItemInstanceComponentViewModel() const { return nullptr; }
 
 	/**
 	 * Called from the ItemDefinition when gathering the AssetTags for the AssetRegistrySearch functionality. Follow this
@@ -57,10 +67,27 @@ public:
 	virtual void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
 	
 	/** User facing text of the item name */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	FText ItemName;
+	
+	/** User facing description of the item */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (MultiLine=true))
+	FText Description;
 
-	/** The tags that this item has.
+	/** The user facing icon of the item. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSoftObjectPtr<UTexture2D> Icon;
+	
+	/** The ItemInstanceViewModel to create. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AssetBundles = "ViewModel"), NoClear)
+	TSoftClassPtr<UItemInstanceViewModel> ItemInstanceViewModelClass;
+	
+	/** A specialized widget to display additional item information. The class must implement the ItemViewModelInterface. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AssetBundles = "UI", MustImplement = "/Script/InventorySystem.ItemViewModelInterface"))
+	TSoftClassPtr<UUserWidget> WidgetClass;
+
+	/** 
+	 * The tags that this item has.
 	 * @note You can search for items with specific tags through the AssetRegistry.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Definition")

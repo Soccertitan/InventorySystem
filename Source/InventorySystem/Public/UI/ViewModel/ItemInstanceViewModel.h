@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "InventoryFastTypes.h"
 #include "MVVMViewModelBase.h"
+#include "Component/ItemInstanceComponentViewModel.h"
 #include "Engine/StreamableManager.h"
 #include "ItemInstanceViewModel.generated.h"
 
 
+class UItemInstanceComponentViewModel;
 class UItemDefinitionViewModel;
 
 /**
@@ -52,6 +54,15 @@ public:
 	bool CanHaveMaxQuantityGreaterThanOne() const {return MaxQuantity > 1;}
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
 	bool IsAtMaxQuantity() const {return Quantity >= MaxQuantity;}
+	
+	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
+	TArray<UItemInstanceComponentViewModel*> GetItemInstanceComponentViewModels() const { return ItemInstanceComponentViewModels; }
+	
+	UFUNCTION(BlueprintPure, DisplayName = "FindOrCreateItemInstanceComponentViewModel", Category = "Viewmodel|ItemInstance", meta = (DeterminesOutputType="Class"))
+	UItemInstanceComponentViewModel* K2_FindOrCreateItemInstanceComponentViewModel(TSubclassOf<UItemInstanceComponentViewModel> Class);
+	
+	template<typename T> requires std::derived_from<T, UItemInstanceComponentViewModel>
+	T* FindOrCreateItemInstanceComponentViewModel();
 	
 	/**
 	 * Creates a Widget and initializes it with this ViewModel. If the passed in Widget class is null, the function
@@ -139,9 +150,24 @@ private:
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = "true"))
 	int32 MaxQuantity = 0;
 	
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<UItemInstanceComponentViewModel>> ItemInstanceComponentViewModels;
+	
 	/** Cached handle for the ItemDefinition. */
 	TSharedPtr<FStreamableHandle> ItemDefinitionStreamableHandle;
 	
 	/** Called when the ItemDefinition is loaded. */
-	void Internal_OnItemDefinitionLoaded();
+	void OnItemDefinitionLoadedInternal();
+	
+	/** Creates a new ItemInstanceComponentViewModel for each ItemDefFragment. */
+	void CreateItemInstanceComponentViewModelsInternal(const UItemDefinition* ItemDefinition, bool bReset);
 };
+
+/**
+ * @return A pointer to the first component that matches the class.
+ */
+template <typename T> requires std::derived_from<T, UItemInstanceComponentViewModel>
+T* UItemInstanceViewModel::FindOrCreateItemInstanceComponentViewModel()
+{
+	return K2_FindItemInstanceComponentViewModel(T::StaticClass());
+}

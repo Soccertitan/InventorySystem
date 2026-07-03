@@ -6,7 +6,6 @@
 #include "InventoryBlueprintFunctionLibrary.h"
 #include "InventoryFastTypes.h"
 #include "Engine/AssetManager.h"
-#include "Item/Fragment/ItemDefinitionFragment_UI.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
 UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemInstanceViewModel(UObject* Owner, const FItemInstance& ItemInstance)
@@ -16,13 +15,13 @@ UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemI
 		TSubclassOf<UItemInstanceViewModel> ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 		if (ItemInstance.IsValid())
 		{
-			if (const FItemDefinitionFragment_UI* UIFrag = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem())->FindFragmentByType<FItemDefinitionFragment_UI>())
+			if (const UItemDefinition* ItemDefinition = UInventoryBlueprintFunctionLibrary::GetItemDefinition(ItemInstance.GetItem()))
 			{
-				if (!UIFrag->ItemInstanceViewModelClass.Get())
+				if (!ItemDefinition->ItemInstanceViewModelClass.Get())
 				{
-					UAssetManager::Get().LoadAssetList({UIFrag->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+					UAssetManager::Get().LoadAssetList({ItemDefinition->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
 				}
-				ItemInstanceViewModelClass = UIFrag->ItemInstanceViewModelClass.Get() ? UIFrag->ItemInstanceViewModelClass.Get() : UItemInstanceViewModel::StaticClass();
+				ItemInstanceViewModelClass = ItemDefinition->ItemInstanceViewModelClass.Get() ? ItemDefinition->ItemInstanceViewModelClass.Get() : UItemInstanceViewModel::StaticClass();
 			}
 		}
 		UItemInstanceViewModel* NewVM = NewObject<UItemInstanceViewModel>(Owner, ItemInstanceViewModelClass);
@@ -30,14 +29,4 @@ UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemI
 		return NewVM;
 	}
 	return nullptr;
-}
-
-bool UInventoryViewModelBlueprintFunctionLibrary::DoesItemHaveUIFragment(const TInstancedStruct<FItem>& Item)
-{
-	FAssetData AssetData;
-	bool Result;
-	FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(Item.Get<FItem>().GetItemDefinition().ToSoftObjectPath());
-	UAssetManager::Get().GetPrimaryAssetData(AssetId, AssetData);
-	AssetData.GetTagValue("ItemFragment_UI", Result);
-	return Result;
 }

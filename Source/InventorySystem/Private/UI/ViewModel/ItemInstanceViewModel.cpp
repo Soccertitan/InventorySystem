@@ -9,13 +9,13 @@
 #include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
 #include "Item/ItemDefinition.h"
-#include "Item/Fragment/ItemDefinitionFragment_UI.h"
 #include "ItemContainer/ItemContainer.h"
 #include "UI/ItemViewModelInterface.h"
+#include "UI/ViewModel/Component/ItemInstanceComponentViewModel.h"
 
 UItemInstanceViewModel::UItemInstanceViewModel()
 {
-	Bundles.Add("UI");
+	Bundles.Append({"UI", "ViewModel"});
 }
 
 void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
@@ -25,12 +25,19 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
 		bool bShouldLoadItemDefinition = false;
 		if (ItemInstance.GetHandle() != Handle)
 		{
-			ItemDefinitionStreamableHandle.Reset();
-			bShouldLoadItemDefinition = true;
+			if (ItemInstance.GetHandle().GetGuid() != Handle.GetGuid())
+			{
+				ItemDefinitionStreamableHandle.Reset();
+				bShouldLoadItemDefinition = true;
+			}
 			Handle = ItemInstance.GetHandle();
 		}
 		
 		OnItemInstanceSet(ItemInstance);
+		for (UItemInstanceComponentViewModel* ViewModel : ItemInstanceComponentViewModels)
+		{
+			ViewModel->OnItemInstanceSet(ItemInstance);
+		}
 
 		SetItem(ItemInstance.GetItem(), bShouldLoadItemDefinition);
 	}
@@ -42,6 +49,10 @@ void UItemInstanceViewModel::SetItem(const TInstancedStruct<FItem>& Item, bool b
 	{
 		CachedItem = Item;
 		OnItemSet(CachedItem);
+		for (UItemInstanceComponentViewModel* ViewModel : ItemInstanceComponentViewModels)
+		{
+			ViewModel->OnItemSet(Item);
+		}
 		
 		if (bShouldSetItemDefinition)
 		{
@@ -60,9 +71,33 @@ void UItemInstanceViewModel::SetItemDefinition(const UItemDefinition* ItemDefini
 {
 	if (ItemDefinition)
 	{
+		const bool NewItemDef = ItemDefinitionSoft.Get() != ItemDefinition;
+		CreateItemInstanceComponentViewModelsInternal(ItemDefinition, NewItemDef);
+		
 		ItemDefinitionSoft = ItemDefinition->GetPathName();
 		OnItemDefinitionSet(ItemDefinition);
+		for (UItemInstanceComponentViewModel* ViewModel : ItemInstanceComponentViewModels)
+		{
+			ViewModel->OnItemDefinitionSet(ItemDefinition);
+		}
 	}
+}
+
+UItemInstanceComponentViewModel* UItemInstanceViewModel::K2_FindOrCreateItemInstanceComponentViewModel(TSubclassOf<UItemInstanceComponentViewModel> Class)
+{
+	if (Class)
+	{
+		for (UItemInstanceComponentViewModel* ViewModel : ItemInstanceComponentViewModels)
+		{
+			if (ViewModel->IsA(Class))
+			{
+				return ViewModel;
+			}
+		}
+		UItemInstanceComponentViewModel* NewVM = NewObject<UItemInstanceComponentViewModel>(this, Class);
+		return NewVM;
+	}
+	return nullptr;
 }
 
 UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* OwningPlayer, TSubclassOf<UUserWidget> WidgetClass)
@@ -76,14 +111,11 @@ UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* 
 		}
 		if (ItemDefinition)
 		{
-			if (const FItemDefinitionFragment_UI* Fragment = ItemDefinition->FindFragmentByType<FItemDefinitionFragment_UI>())
+			WidgetClass = ItemDefinition->WidgetClass.Get();
+			if (!WidgetClass && !ItemDefinition->WidgetClass.IsNull())
 			{
-				WidgetClass = Fragment->WidgetClass.Get();
-				if (!WidgetClass && !Fragment->WidgetClass.IsNull())
-				{
-					UAssetManager::Get().LoadAssetList({Fragment->WidgetClass.ToSoftObjectPath()})->WaitUntilComplete();
-					WidgetClass = Fragment->WidgetClass.Get();
-				}
+				UAssetManager::Get().LoadAssetList({ItemDefinition->WidgetClass.ToSoftObjectPath()})->WaitUntilComplete();
+				WidgetClass = ItemDefinition->WidgetClass.Get();
 			}
 		}
 	}
@@ -113,7 +145,7 @@ void UItemInstanceViewModel::LoadItemDefinition()
 	
 		if (AssetId.IsValid())
 		{
-			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemInstanceViewModel::Internal_OnItemDefinitionLoaded);
+			FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemInstanceViewModel::OnItemDefinitionLoadedInternal);
 			ItemDefinitionStreamableHandle = UAssetManager::Get().PreloadPrimaryAssets(
 			   {AssetId}, Bundles, bLoadRecursive, Delegate);
 		}
@@ -145,11 +177,8 @@ void UItemInstanceViewModel::OnItemSet_Implementation(const TInstancedStruct<FIt
 void UItemInstanceViewModel::OnItemDefinitionSet_Implementation(const UItemDefinition* ItemDefinition)
 {
 	SetItemName(ItemDefinition->ItemName);
-	if (const FItemDefinitionFragment_UI* UIFrag = ItemDefinition->FindFragmentByType<FItemDefinitionFragment_UI>())
-	{
-		SetDescription(UIFrag->Description);
-		SetIcon(UIFrag->Icon);
-	}
+	SetDescription(ItemDefinition->Description);
+	SetIcon(ItemDefinition->Icon);
 }
 
 void UItemInstanceViewModel::SetItemName(FText InValue)
@@ -180,7 +209,7 @@ void UItemInstanceViewModel::SetMaxQuantity(int32 InValue)
 	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(CanHaveMaxQuantityGreaterThanOne);
 }
 
-void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
+void UItemInstanceViewModel::OnItemDefinitionLoadedInternal()
 {
 	if (const UItemDefinition* ItemDefinition = ItemDefinitionSoft.Get())
 	{
@@ -190,5 +219,43 @@ void UItemInstanceViewModel::Internal_OnItemDefinitionLoaded()
 	if (bAutoUnloadItemDefinition)
 	{
 		ItemDefinitionStreamableHandle.Reset();
+	}
+}
+
+void UItemInstanceViewModel::CreateItemInstanceComponentViewModelsInternal(const UItemDefinition* ItemDefinition, bool bReset)
+{
+	if (bReset)
+	{
+		ItemInstanceComponentViewModels.Reset();
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemInstanceComponentViewModels);
+	}
+	
+	bool bAddedNewViewModels = false;
+	for (TInstancedStruct<FItemDefinitionFragment> Fragment : ItemDefinition->Fragments)
+	{
+		if (const FItemDefinitionFragment* FragmentPtr = Fragment.GetPtr<FItemDefinitionFragment>())
+		{
+			TSubclassOf<UItemInstanceComponentViewModel> ComponentViewModelClass = Fragment->GetItemInstanceComponentViewModel();
+			UItemInstanceComponentViewModel* ComponentViewModel = K2_FindOrCreateItemInstanceComponentViewModel(ComponentViewModelClass);
+			if (!ComponentViewModel)
+			{
+				continue;
+			}
+			ItemInstanceComponentViewModels.Add(ComponentViewModel);
+			bAddedNewViewModels = true;
+			if (FItemInstance* ItemInstance = Handle.GetItemInstance())
+			{
+				ComponentViewModel->OnItemInstanceSet(*ItemInstance);
+			}
+			if (CachedItem.IsValid())
+			{
+				ComponentViewModel->OnItemSet(CachedItem);
+			}
+			ComponentViewModel->OnItemDefinitionSet(ItemDefinition);
+		}
+	}
+	if (bAddedNewViewModels)
+	{
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemInstanceComponentViewModels);
 	}
 }
