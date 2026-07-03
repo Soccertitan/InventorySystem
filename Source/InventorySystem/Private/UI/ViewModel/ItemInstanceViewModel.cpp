@@ -22,14 +22,11 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
 {
 	if (ItemInstance.IsValid())
 	{
-		bool bShouldLoadItemDefinition = false;
+		bool bShouldSetItemDefinition = false;
 		if (ItemInstance.GetHandle() != Handle)
 		{
-			if (ItemInstance.GetHandle().GetGuid() != Handle.GetGuid())
-			{
-				ItemDefinitionStreamableHandle.Reset();
-				bShouldLoadItemDefinition = true;
-			}
+			ItemDefinitionStreamableHandle.Reset();
+			bShouldSetItemDefinition = true;
 			Handle = ItemInstance.GetHandle();
 		}
 		
@@ -39,7 +36,7 @@ void UItemInstanceViewModel::SetItemInstance(const FItemInstance& ItemInstance)
 			ViewModel->OnItemInstanceSet(ItemInstance);
 		}
 
-		SetItem(ItemInstance.GetItem(), bShouldLoadItemDefinition);
+		SetItem(ItemInstance.GetItem(), bShouldSetItemDefinition);
 	}
 }
 
@@ -83,7 +80,7 @@ void UItemInstanceViewModel::SetItemDefinition(const UItemDefinition* ItemDefini
 	}
 }
 
-UItemInstanceComponentViewModel* UItemInstanceViewModel::K2_FindOrCreateItemInstanceComponentViewModel(TSubclassOf<UItemInstanceComponentViewModel> Class)
+UItemInstanceComponentViewModel* UItemInstanceViewModel::K2_FindItemInstanceComponentViewModel(TSubclassOf<UItemInstanceComponentViewModel> Class) const
 {
 	if (Class)
 	{
@@ -94,8 +91,6 @@ UItemInstanceComponentViewModel* UItemInstanceViewModel::K2_FindOrCreateItemInst
 				return ViewModel;
 			}
 		}
-		UItemInstanceComponentViewModel* NewVM = NewObject<UItemInstanceComponentViewModel>(this, Class);
-		return NewVM;
 	}
 	return nullptr;
 }
@@ -227,7 +222,7 @@ void UItemInstanceViewModel::CreateItemInstanceComponentViewModelsInternal(const
 	if (bReset)
 	{
 		ItemInstanceComponentViewModels.Reset();
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemInstanceComponentViewModels);
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(ItemInstanceComponentViewModelsUpdated);
 	}
 	
 	bool bAddedNewViewModels = false;
@@ -236,11 +231,12 @@ void UItemInstanceViewModel::CreateItemInstanceComponentViewModelsInternal(const
 		if (const FItemDefinitionFragment* FragmentPtr = Fragment.GetPtr<FItemDefinitionFragment>())
 		{
 			TSubclassOf<UItemInstanceComponentViewModel> ComponentViewModelClass = Fragment->GetItemInstanceComponentViewModel();
-			UItemInstanceComponentViewModel* ComponentViewModel = K2_FindOrCreateItemInstanceComponentViewModel(ComponentViewModelClass);
-			if (!ComponentViewModel)
+			UItemInstanceComponentViewModel* ComponentViewModel = K2_FindItemInstanceComponentViewModel(ComponentViewModelClass);
+			if (ComponentViewModel)
 			{
 				continue;
 			}
+			ComponentViewModel = NewObject<UItemInstanceComponentViewModel>(this, ComponentViewModelClass);
 			ItemInstanceComponentViewModels.Add(ComponentViewModel);
 			bAddedNewViewModels = true;
 			if (FItemInstance* ItemInstance = Handle.GetItemInstance())
@@ -256,6 +252,6 @@ void UItemInstanceViewModel::CreateItemInstanceComponentViewModelsInternal(const
 	}
 	if (bAddedNewViewModels)
 	{
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetItemInstanceComponentViewModels);
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(ItemInstanceComponentViewModelsUpdated);
 	}
 }

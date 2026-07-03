@@ -7,9 +7,13 @@
 #include "MVVMViewModelBase.h"
 #include "Component/ItemInstanceComponentViewModel.h"
 #include "Engine/StreamableManager.h"
+#include "Types/MVVMEventField.h"
 #include "ItemInstanceViewModel.generated.h"
 
 
+class UTexture2D;
+struct FMVVMEventField;
+class UUserWidget;
 class UItemInstanceComponentViewModel;
 class UItemDefinitionViewModel;
 
@@ -55,14 +59,15 @@ public:
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
 	bool IsAtMaxQuantity() const {return Quantity >= MaxQuantity;}
 	
+	/** Call FindItemInstanceComponentViewModel when binding to this notify to retrieve the data. */
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemInstance")
-	TArray<UItemInstanceComponentViewModel*> GetItemInstanceComponentViewModels() const { return ItemInstanceComponentViewModels; }
+	FMVVMEventField ItemInstanceComponentViewModelsUpdated() const { return FMVVMEventField{}; }
 	
-	UFUNCTION(BlueprintPure, DisplayName = "FindOrCreateItemInstanceComponentViewModel", Category = "Viewmodel|ItemInstance", meta = (DeterminesOutputType="Class"))
-	UItemInstanceComponentViewModel* K2_FindOrCreateItemInstanceComponentViewModel(TSubclassOf<UItemInstanceComponentViewModel> Class);
+	UFUNCTION(BlueprintPure, DisplayName = "FindItemInstanceComponentViewModel", Category = "Viewmodel|ItemInstance", meta = (DeterminesOutputType="Class"))
+	UItemInstanceComponentViewModel* K2_FindItemInstanceComponentViewModel(UPARAM(meta = (AllowAbstract="false")) TSubclassOf<UItemInstanceComponentViewModel> Class) const;
 	
 	template<typename T> requires std::derived_from<T, UItemInstanceComponentViewModel>
-	T* FindOrCreateItemInstanceComponentViewModel();
+	T* FindItemInstanceComponentViewModel() const;
 	
 	/**
 	 * Creates a Widget and initializes it with this ViewModel. If the passed in Widget class is null, the function
@@ -167,7 +172,7 @@ private:
  * @return A pointer to the first component that matches the class.
  */
 template <typename T> requires std::derived_from<T, UItemInstanceComponentViewModel>
-T* UItemInstanceViewModel::FindOrCreateItemInstanceComponentViewModel()
+T* UItemInstanceViewModel::FindItemInstanceComponentViewModel() const
 {
 	return K2_FindItemInstanceComponentViewModel(T::StaticClass());
 }
