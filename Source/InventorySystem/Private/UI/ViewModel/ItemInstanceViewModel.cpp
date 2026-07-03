@@ -232,7 +232,7 @@ void UItemInstanceViewModel::CreateItemInstanceComponentViewModelsInternal(const
 		{
 			TSubclassOf<UItemInstanceComponentViewModel> ComponentViewModelClass = Fragment->GetItemInstanceComponentViewModel();
 			UItemInstanceComponentViewModel* ComponentViewModel = K2_FindItemInstanceComponentViewModel(ComponentViewModelClass);
-			if (ComponentViewModel)
+			if (ComponentViewModel || !ComponentViewModelClass)
 			{
 				continue;
 			}
