@@ -81,10 +81,6 @@ public:
 	/** The ItemInstanceViewModel to create. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AssetBundles = "ViewModel"), NoClear)
 	TSoftClassPtr<UItemInstanceViewModel> ItemInstanceViewModelClass;
-	
-	/** A specialized widget to display additional item information. The class must implement the ItemViewModelInterface. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AssetBundles = "UI", MustImplement = "/Script/InventorySystem.ItemViewModelInterface"))
-	TSoftClassPtr<UUserWidget> WidgetClass;
 
 	/** 
 	 * The tags that this item has.

@@ -5,12 +5,9 @@
 
 #include "InventoryBlueprintFunctionLibrary.h"
 #include "InventoryManagerComponent.h"
-#include "InventorySystem.h"
-#include "Blueprint/UserWidget.h"
 #include "Engine/AssetManager.h"
 #include "Item/ItemDefinition.h"
 #include "ItemContainer/ItemContainer.h"
-#include "UI/ItemViewModelInterface.h"
 #include "UI/ViewModel/Component/ItemInstanceComponentViewModel.h"
 
 UItemInstanceViewModel::UItemInstanceViewModel()
@@ -91,42 +88,6 @@ UItemInstanceComponentViewModel* UItemInstanceViewModel::K2_FindItemInstanceComp
 				return ViewModel;
 			}
 		}
-	}
-	return nullptr;
-}
-
-UUserWidget* UItemInstanceViewModel::CreateItemDetailsWidget(APlayerController* OwningPlayer, TSubclassOf<UUserWidget> WidgetClass)
-{
-	if (!WidgetClass && !ItemDefinitionSoft.IsNull())
-	{
-		const UItemDefinition* ItemDefinition = ItemDefinitionSoft.Get();
-		if (!ItemDefinition)
-		{
-			UAssetManager::Get().LoadAssetList({ItemDefinitionSoft.ToSoftObjectPath()})->WaitUntilComplete();
-		}
-		if (ItemDefinition)
-		{
-			WidgetClass = ItemDefinition->WidgetClass.Get();
-			if (!WidgetClass && !ItemDefinition->WidgetClass.IsNull())
-			{
-				UAssetManager::Get().LoadAssetList({ItemDefinition->WidgetClass.ToSoftObjectPath()})->WaitUntilComplete();
-				WidgetClass = ItemDefinition->WidgetClass.Get();
-			}
-		}
-	}
-
-	if (WidgetClass)
-	{
-		UUserWidget* NewWidget = CreateWidget<UUserWidget>(OwningPlayer, WidgetClass);
-		if (NewWidget->Implements<UItemViewModelInterface>())
-		{
-			IItemViewModelInterface::Execute_SetItemViewModel(NewWidget, this);
-		}
-		else
-		{
-			UE_LOG(LogInventorySystem, Error, TEXT("[%s] does not implement ItemViewModelInterface."), *GetNameSafe(NewWidget));
-		}
-		return NewWidget;
 	}
 	return nullptr;
 }

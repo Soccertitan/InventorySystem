@@ -13,7 +13,6 @@
 
 class UTexture2D;
 struct FMVVMEventField;
-class UUserWidget;
 class UItemInstanceComponentViewModel;
 class UItemDefinitionViewModel;
 
@@ -68,17 +67,6 @@ public:
 	
 	template<typename T> requires std::derived_from<T, UItemInstanceComponentViewModel>
 	T* FindItemInstanceComponentViewModel() const;
-	
-	/**
-	 * Creates a Widget and initializes it with this ViewModel. If the passed in Widget class is null, the function
-	 * will retrieve the value in the ItemFragment_UI ItemWidgetClass variable.
-	 * @param OwningPlayer The PlayerController that owns the widget.
-	 * @param WidgetClass The widget to create.
-	 * @return The newly created widget.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
-	UUserWidget* CreateItemDetailsWidget(APlayerController* OwningPlayer, 
-		UPARAM(meta = (MustImplement = "/Script/InventorySystem.ItemViewModelInterface")) TSubclassOf<UUserWidget> WidgetClass = nullptr);
 	
 	/** Loads the ItemDefinition using the cached SoftObjectPointer of the ItemDefinition. */
 	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemInstance")
