@@ -7,6 +7,8 @@
 #include "InventoryFastTypes.h"
 #include "Engine/AssetManager.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
+#include "UI/ViewModel/Sorting/ItemInstanceViewModelSortingAlgorithm.h"
+#include "UI/ViewModel/Sorting/ItemInstanceViewModelSortingPreset.h"
 
 UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemInstanceViewModel(UObject* Owner, const FItemInstance& ItemInstance)
 {
@@ -29,4 +31,27 @@ UItemInstanceViewModel* UInventoryViewModelBlueprintFunctionLibrary::CreateItemI
 		return NewVM;
 	}
 	return nullptr;
+}
+
+void UInventoryViewModelBlueprintFunctionLibrary::SortItemInstanceViewModels(const UItemInstanceViewModelSortingPreset* SortingPreset, TArray<UItemInstanceViewModel*>& InViewModels)
+{
+	if (!SortingPreset || InViewModels.IsEmpty())
+	{
+		return;
+	}
+
+	Algo::Sort(InViewModels, [SortingPreset](const UItemInstanceViewModel* A, const UItemInstanceViewModel* B)
+	{
+		for (const TObjectPtr<UItemInstanceViewModelSortingAlgorithm>& SortAlgorithm : SortingPreset->SortingAlgorithms)
+		{
+			if (SortAlgorithm)
+			{
+				if (SortAlgorithm->GetResult(A, B))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	});
 }
