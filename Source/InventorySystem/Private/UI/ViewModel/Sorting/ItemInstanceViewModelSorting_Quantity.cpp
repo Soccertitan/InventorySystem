@@ -5,7 +5,7 @@
 
 #include "UI/ViewModel/ItemInstanceViewModel.h"
 
-bool UItemInstanceViewModelSorting_Quantity::CalculateResult_Implementation(const UItemInstanceViewModel* A, const UItemInstanceViewModel* B) const
+bool UItemInstanceViewModelSorting_Quantity::CalculateResult_Implementation(const UObject* Context, const UItemInstanceViewModel* A, const UItemInstanceViewModel* B) const
 {
 	if (bDescendingOrder)
 	{

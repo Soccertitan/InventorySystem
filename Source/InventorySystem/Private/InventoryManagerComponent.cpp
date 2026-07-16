@@ -66,8 +66,8 @@ void UInventoryManagerComponent::PostEditChangeProperty(struct FPropertyChangedE
 		if (PropertyChangedEvent.ChangeType == EPropertyChangeType::ArrayAdd)
 		{
 			StartupItems.FindAndRemoveChecked(FGameplayTag());
-			const FGameplayTag DefaultTag = UInventorySettings::GetDefaultItemContainerTag();
-			const FStartupItems StartupItem(UInventorySettings::GetDefaultItemContainerClass());
+			const FGameplayTag DefaultTag = UInventorySettings::GetItemContainerTag();
+			const FStartupItems StartupItem(UInventorySettings::GetItemContainerClass());
 			if (!StartupItems.Contains(DefaultTag))
 			{
 				StartupItems.Add(DefaultTag, StartupItem);

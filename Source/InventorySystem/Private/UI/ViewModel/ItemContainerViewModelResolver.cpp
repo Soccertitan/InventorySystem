@@ -45,7 +45,7 @@ UItemContainer* UItemContainerViewModelResolver::GetItemContainer(const UUserWid
 
 UItemContainerViewModelResolver_ItemContainerTag::UItemContainerViewModelResolver_ItemContainerTag()
 {
-	ItemContainerTag = UInventorySettings::GetDefaultItemContainerTag();
+	ItemContainerTag = UInventorySettings::GetItemContainerTag();
 }
 
 UObject* UItemContainerViewModelResolver_ItemContainerTag::CreateInstance(const UClass* ExpectedType, const UUserWidget* UserWidget,

@@ -3,18 +3,16 @@
 
 #include "UI/ViewModel/ItemContainerViewModel.h"
 
-#include "InventoryBlueprintFunctionLibrary.h"
 #include "ItemContainer/ItemContainer.h"
-#include "Item/ItemDefinition.h"
 #include "InventoryManagerComponent.h"
+#include "InventorySettings.h"
 #include "InventorySystem.h"
-#include "Engine/AssetManager.h"
-#include "UI/InventoryViewModelBlueprintFunctionLibrary.h"
 #include "UI/ViewModel/ItemInstanceViewModel.h"
+#include "UI/ViewModel/Sorting/ItemInstanceViewModelSorting.h"
+#include "UI/ViewModel/Sorting/ItemInstanceViewModelSortingPreset.h"
 
 UItemContainerViewModel::UItemContainerViewModel()
 {
-	Bundles.Add("ViewModel");
 }
 
 void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
@@ -27,31 +25,39 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 
 	if (InItemContainer != GetItemContainer())
 	{
-		if (IsValid(GetItemContainer()))
+		if (ItemContainer)
 		{
-			GetItemContainer()->OnItemAddedDelegate.RemoveAll(this);
-			GetItemContainer()->OnItemRemovedDelegate.RemoveAll(this);
-			GetItemContainer()->OnItemChangedDelegate.RemoveAll(this);
+			ItemContainer->OnItemAddedDelegate.RemoveAll(this);
+			ItemContainer->OnItemRemovedDelegate.RemoveAll(this);
+			ItemContainer->OnItemChangedDelegate.RemoveAll(this);
 		}
 		
 		ItemContainer = InItemContainer;
 		
-		InItemContainer->OnItemAddedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemAdded);
-		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemRemoved);
-		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::Internal_OnItemChanged);
+		InItemContainer->OnItemAddedDelegate.AddUObject(this, &UItemContainerViewModel::OnItemAddedInternal);
+		InItemContainer->OnItemRemovedDelegate.AddUObject(this, &UItemContainerViewModel::OnItemRemovedInternal);
+		InItemContainer->OnItemChangedDelegate.AddUObject(this, &UItemContainerViewModel::OnItemChangedInternal);
 		
 		const TArray<FItemInstance>& Items = GetItemContainer()->K2_GetItems();
 		ItemInstanceViewModels.Empty(Items.Num());
-		if (Items.Num() > 0)
+		for (const FItemInstance& ItemInstance : Items)
 		{
-			SetIsLoadingInitialItems(true);
-			LoadItemDefinitions(GetItemContainer()->K2_GetItems());
+			UItemInstanceViewModel* NewViewModel = NewObject<UItemInstanceViewModel>(this, GetItemInstanceViewModelClass(ItemInstance));
+			NewViewModel->SetItemInstance(ItemInstance);
+			ItemInstanceViewModels.Add(NewViewModel);
+			OnItemAdded(NewViewModel);
 		}
-		else
+		
+		bool bAutoSortCompleted = false;
+		if (bAutoSort)
 		{
-			SetIsLoadingInitialItems(false);
+			bAutoSortCompleted = SortItemInstances(GetAutoSortContextObject(), AutoSortPreset);
 		}
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
+		if (!bAutoSortCompleted)
+		{
+			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
+		}
+		
 		UE_MVVM_SET_PROPERTY_VALUE(ItemContainerName, GetItemContainer()->GetDisplayName());
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetMaxCapacity);
 		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
@@ -60,14 +66,55 @@ void UItemContainerViewModel::SetItemContainer(UItemContainer* InItemContainer)
 	}
 }
 
-void UItemContainerViewModel::SetIsLoadingInitialItems(bool bValue)
-{
-	UE_MVVM_SET_PROPERTY_VALUE(bLoadingInitialItems, bValue);
-}
-
 UItemContainer* UItemContainerViewModel::GetItemContainer() const
 {
 	return ItemContainer;
+}
+
+void UItemContainerViewModel::SetAutoSortEnabled(bool bEnabled)
+{
+	if (UE_MVVM_SET_PROPERTY_VALUE(bAutoSort, bEnabled))
+	{
+		if (bAutoSort)
+		{
+			SortItemInstances(GetAutoSortContextObject(), AutoSortPreset);
+		}
+	}
+}
+
+void UItemContainerViewModel::SetAutoSortPreset(UItemInstanceViewModelSortingPreset* Value)
+{
+	if (UE_MVVM_SET_PROPERTY_VALUE(AutoSortPreset, Value))
+	{
+		if (bAutoSort)
+		{
+			SortItemInstances(GetAutoSortContextObject(), AutoSortPreset);
+		}
+	}
+}
+
+bool UItemContainerViewModel::SortItemInstances(const UObject* Context, const UItemInstanceViewModelSortingPreset* SortingPreset)
+{
+	if (SortingPreset && ItemInstanceViewModels.Num() > 0)
+	{
+		Algo::Sort(ItemInstanceViewModels, [Context, SortingPreset](const UItemInstanceViewModel* A, const UItemInstanceViewModel* B)
+		{
+			for (const TObjectPtr<UItemInstanceViewModelSorting>& SortAlgorithm : SortingPreset->SortingAlgorithms)
+			{
+				if (SortAlgorithm)
+				{
+					if (SortAlgorithm->GetResult(Context, A, B))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		});
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
+		return true;
+	}
+	return false;
 }
 
 int32 UItemContainerViewModel::GetConsumedCapacity() const
@@ -89,6 +136,11 @@ int32 UItemContainerViewModel::GetMaxCapacity() const
 	return 0;
 }
 
+TSubclassOf<UItemInstanceViewModel> UItemContainerViewModel::GetItemInstanceViewModelClass(const FItemInstance& ItemInstance) const
+{
+	return UInventorySettings::GetItemInstanceViewModelClass();
+}
+
 TArray<UItemInstanceViewModel*> UItemContainerViewModel::K2_GetItemInstanceViewModels() const
 {
 	return ItemInstanceViewModels;
@@ -99,62 +151,37 @@ const TArray<UItemInstanceViewModel*>& UItemContainerViewModel::GetItemInstanceV
 	return ItemInstanceViewModels;
 }
 
-void UItemContainerViewModel::LoadItemDefinitions(const TArray<FItemInstance>& ItemInstances)
+void UItemContainerViewModel::OnItemAddedInternal(const FItemInstance& ItemInstance)
 {
-	TArray<FPrimaryAssetId> AssetList;
-	for (const FItemInstance& ItemInstance : ItemInstances)
+	UItemInstanceViewModel* NewViewModel = NewObject<UItemInstanceViewModel>(this, GetItemInstanceViewModelClass(ItemInstance));
+	NewViewModel->SetItemInstance(ItemInstance);
+	ItemInstanceViewModels.Add(NewViewModel);
+	OnItemAdded(NewViewModel);
+
+	bool bAutoSortCompleted = false;
+	if (bAutoSort)
 	{
-		FPrimaryAssetId AssetId = UAssetManager::Get().GetPrimaryAssetIdForPath(ItemInstance.GetItem().Get<FItem>().GetItemDefinition().ToSoftObjectPath());
-		if (AssetId.IsValid())
-		{
-			AssetList.AddUnique(AssetId);
-		}
+		bAutoSortCompleted = SortItemInstances(GetAutoSortContextObject(), AutoSortPreset);
 	}
 	
-	if (AssetList.Num() > 0)
+	if (!bAutoSortCompleted)
 	{
-		FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UItemContainerViewModel::ItemDefinitionsLoaded, ItemInstances);
-		UAssetManager::Get().PreloadPrimaryAssets(AssetList, Bundles, bLoadRecursive, Delegate);
+		ItemInstanceViewModelBuffer = NewViewModel;
+		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemInstanceViewModel);
+		ItemInstanceViewModelBuffer = nullptr;
 	}
-}
 
-void UItemContainerViewModel::ItemDefinitionsLoaded(TArray<FItemInstance> ItemInstances)
-{
-	for (const FItemInstance& ItemInstance : ItemInstances)
-	{
-		UItemInstanceViewModel* NewViewModel = UInventoryViewModelBlueprintFunctionLibrary::CreateItemInstanceViewModel(this, ItemInstance);
-		ItemInstanceViewModels.Add(NewViewModel);
-		OnItemAdded(NewViewModel);
-
-		if (!IsLoadingInitialItems())
-		{
-			ItemInstanceViewModelBuffer = NewViewModel;
-			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetAddedItemInstanceViewModel);
-			ItemInstanceViewModelBuffer = nullptr;
-		}
-	}
-	
-	if (IsLoadingInitialItems() && ItemInstanceViewModels.Num() >= GetConsumedCapacity())
-	{
-		UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(K2_GetItemInstanceViewModels);
-		SetIsLoadingInitialItems(false);
-	}
-}
-
-void UItemContainerViewModel::Internal_OnItemAdded(const FItemInstance& ItemInstance)
-{
-	LoadItemDefinitions({ItemInstance});
 	UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
 }
 
-void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemInstance)
+void UItemContainerViewModel::OnItemRemovedInternal(const FItemInstance& ItemInstance)
 {
 	for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 	{
 		if (ItemInstanceViewModels[idx]->GetHandle().GetGuid() == ItemInstance.GetGuid())
 		{
 			UItemInstanceViewModel* RemovedViewModel = ItemInstanceViewModels[idx];
-			ItemInstanceViewModels.RemoveAtSwap(idx);
+			ItemInstanceViewModels.RemoveAt(idx);
 			OnItemRemoved(RemovedViewModel);
 			UE_MVVM_BROADCAST_FIELD_VALUE_CHANGED(GetConsumedCapacity);
 
@@ -166,7 +193,7 @@ void UItemContainerViewModel::Internal_OnItemRemoved(const FItemInstance& ItemIn
 	}
 }
 
-void UItemContainerViewModel::Internal_OnItemChanged(const FItemInstance& ItemInstance)
+void UItemContainerViewModel::OnItemChangedInternal(const FItemInstance& ItemInstance)
 {
 	for (UItemInstanceViewModel* ItemInstanceViewModel : ItemInstanceViewModels)
 	{

@@ -77,10 +77,6 @@ public:
 	/** The user facing icon of the item. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSoftObjectPtr<UTexture2D> Icon;
-	
-	/** The ItemInstanceViewModel to create. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI", meta = (AssetBundles = "ViewModel"), NoClear)
-	TSoftClassPtr<UItemInstanceViewModel> ItemInstanceViewModelClass;
 
 	/** 
 	 * The tags that this item has.

@@ -9,7 +9,6 @@
 
 UItemDefinition::UItemDefinition()
 {
-	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 	ItemClass.InitializeAsScriptStruct(FItem::StaticStruct());
 }
 

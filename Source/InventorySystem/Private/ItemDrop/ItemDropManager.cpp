@@ -26,7 +26,7 @@ void AItemDropManager::BeginPlay()
 
 	if (HasAuthority())
 	{
-		InventoryManagerComponent->CreateItemContainer(UInventorySettings::GetDefaultItemContainerTag(), UItemDropItemContainer::StaticClass());
+		InventoryManagerComponent->CreateItemContainer(UInventorySettings::GetItemContainerTag(), UItemDropItemContainer::StaticClass());
 		InventoryManagerComponent->OnItemRemovedDelegate.AddUniqueDynamic(this, &AItemDropManager::OnItemRemoved);
 	}
 }
@@ -38,7 +38,7 @@ AItemDrop* AItemDropManager::CreateItemDrop(const TInstancedStruct<FItem>& Item,
 		return nullptr;
 	}
 	
-	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetDefaultItemContainerTag());
+	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetItemContainerTag());
 	FAddItemPlanResult Result = InventoryManagerComponent->AddItem(Item, Quantity, ItemContainer);
 	if (Result.ItemInstanceHandles.IsEmpty())
 	{
@@ -63,7 +63,7 @@ AItemDrop* AItemDropManager::CreateItemDropFromItemInstance(const FItemInstance&
 		return nullptr;
 	}
 
-	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetDefaultItemContainerTag());
+	UItemContainer* ItemContainer = InventoryManagerComponent->FindItemContainerByTag(UInventorySettings::GetItemContainerTag());
 	FAddItemPlanResult Result = InventoryManagerComponent->AddItem(ItemInstance.GetItem(), Quantity, ItemContainer);
 	if (Result.ItemInstanceHandles.IsEmpty())
 	{

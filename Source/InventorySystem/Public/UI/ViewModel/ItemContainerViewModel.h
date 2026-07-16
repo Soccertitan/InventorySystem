@@ -6,6 +6,7 @@
 #include "MVVMViewModelBase.h"
 #include "ItemContainerViewModel.generated.h"
 
+class UItemInstanceViewModelSortingPreset;
 struct FItem;
 class UInventoryManagerComponent;
 class UItemInstanceViewModel;
@@ -28,7 +29,16 @@ public:
 	UItemContainer* GetItemContainer() const;
 	
 	FText GetItemContainerName() const {return ItemContainerName;}
-	bool IsLoadingInitialItems() const {return bLoadingInitialItems;}
+	
+	bool IsAutoSortEnabled() const { return bAutoSort; }
+	void SetAutoSortEnabled(bool bEnabled);
+	
+	UItemInstanceViewModelSortingPreset* GetAutoSortPreset() const { return AutoSortPreset; }
+	void SetAutoSortPreset(UItemInstanceViewModelSortingPreset* Value);
+	
+	/** Returns true if the ViewModels were sorted. */
+	UFUNCTION(BlueprintCallable, Category = "Viewmodel|ItemContainer")
+	bool SortItemInstances(const UObject* Context, const UItemInstanceViewModelSortingPreset* SortingPreset);
 
 	UFUNCTION(BlueprintPure, FieldNotify, Category = "Viewmodel|ItemContainer")
 	int32 GetConsumedCapacity() const;
@@ -52,23 +62,16 @@ public:
 	UItemInstanceViewModel* GetRemovedItemInstanceViewModel() const {return ItemInstanceViewModelBuffer;}
 
 protected:
-	/** Bundles to load when asynchronously loading the ItemDefinition. */
-	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
-	TArray<FName> Bundles;
-	
-	/** If true, this will call RecursivelyExpandBundleData and recurse into sub bundles of other primary assets loaded by a bundle reference. */
-	UPROPERTY(EditDefaultsOnly, Category = "AssetManager")
-	bool bLoadRecursive = false;
+	virtual TSubclassOf<UItemInstanceViewModel> GetItemInstanceViewModelClass(const FItemInstance& ItemInstance) const;
+	virtual UObject* GetAutoSortContextObject() const {return nullptr;}
 	
 	/** Updates the ItemContainer for this ViewModel. Triggers OnItemContainerSet if a new one is set. */
 	void SetItemContainer(UItemContainer* InItemContainer);
-	
-	void SetIsLoadingInitialItems(bool bValue);
-	
+
 	/** Called when a valid ItemContainer is set. */
 	virtual void OnItemContainerSet() {}
 
-	/** Called whenever an item is added to the ItemContainer. */
+	/** Called whenever an item is added to the ItemContainer. ItemDefs will be loaded. */
 	virtual void OnItemAdded(UItemInstanceViewModel* ItemInstanceViewModel) {}
 	/** Called whenever an item is removed from the ItemContainer. */
 	virtual void OnItemRemoved(UItemInstanceViewModel* ItemInstanceViewModel) {}
@@ -90,16 +93,17 @@ private:
 	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter, meta = (AllowPrivateAccess = true))
 	FText ItemContainerName;
 	
-	UPROPERTY(BlueprintReadOnly, FieldNotify, Getter = "IsLoadingInitialItems", meta = (AllowPrivateAccess = true))
-	bool bLoadingInitialItems = true;
+	// Will automatically sort the ItemInstanceViewModels using the AutoSortPreset.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, FieldNotify, Setter="SetAutoSortEnabled", Getter="IsAutoSortEnabled", meta = (AllowPrivateAccess))
+	bool bAutoSort = false;
 	
-	/** Loads the ItemDefinition for all Items to get the ItemInstanceViewModelClass. */
-	void LoadItemDefinitions(const TArray<FItemInstance>& ItemInstances);
-	void ItemDefinitionsLoaded(TArray<FItemInstance> ItemInstances);
+	// The sorting method to use when auto sort is enabled.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, FieldNotify, Setter, Getter, meta = (AllowPrivateAccess))
+	TObjectPtr<UItemInstanceViewModelSortingPreset> AutoSortPreset;
 
-	void Internal_OnItemAdded(const FItemInstance& ItemInstance);
-	void Internal_OnItemRemoved(const FItemInstance& ItemInstance);
-	void Internal_OnItemChanged(const FItemInstance& ItemInstance);
+	void OnItemAddedInternal(const FItemInstance& ItemInstance);
+	void OnItemRemovedInternal(const FItemInstance& ItemInstance);
+	void OnItemChangedInternal(const FItemInstance& ItemInstance);
 	
 	friend class UInventoryUISubsystem;
 };

@@ -7,6 +7,7 @@
 #include "InventorySystem.h"
 #include "NativeGameplayTags.h"
 #include "Engine/AssetManager.h"
+#include "UI/ViewModel/ItemInstanceViewModel.h"
 
 namespace DefaultTag
 {
@@ -15,8 +16,9 @@ namespace DefaultTag
 
 UInventorySettings::UInventorySettings()
 {
-	DefaultItemContainerTag = DefaultTag::ItemContainer_Default;
-	DefaultItemContainerClass = UItemContainer::StaticClass();
+	ItemContainerTag = DefaultTag::ItemContainer_Default;
+	ItemContainerClass = UItemContainer::StaticClass();
+	ItemInstanceViewModelClass = UItemInstanceViewModel::StaticClass();
 }
 
 FName UInventorySettings::GetCategoryName() const
@@ -24,35 +26,53 @@ FName UInventorySettings::GetCategoryName() const
 	return TEXT("Plugins");
 }
 
-FGameplayTag UInventorySettings::GetDefaultItemContainerTag()
+FGameplayTag UInventorySettings::GetItemContainerTag()
 {
 	const UInventorySettings* Settings = GetDefault<UInventorySettings>();
 
-	if (!Settings->DefaultItemContainerTag.IsValid())
+	if (!Settings->ItemContainerTag.IsValid())
 	{
-		UE_LOG(LogInventorySystem, Error, TEXT("UInventorySettings.DefaultItemContainerTag is not valid. "
+		UE_LOG(LogInventorySystem, Error, TEXT("UInventorySettings.ItemContainerTag is not valid. "
 			"Set a value in the project settings."));
 	}
 
-	return Settings->DefaultItemContainerTag;
+	return Settings->ItemContainerTag;
 }
 
-TSubclassOf<UItemContainer> UInventorySettings::GetDefaultItemContainerClass()
+TSubclassOf<UItemContainer> UInventorySettings::GetItemContainerClass()
 {
 	const UInventorySettings* Settings = GetDefault<UInventorySettings>();
 
-	if (!Settings->DefaultItemContainerClass)
+	if (!Settings->ItemContainerClass)
 	{
-		UE_LOG(LogInventorySystem, Error, TEXT("UInventorySettings.DefaultItemContainerClass is not valid. "
+		UE_LOG(LogInventorySystem, Error, TEXT("UInventorySettings.ItemContainerClass is not valid. "
 			"Set a value in the project settings."));
 	}
 
-	if (!Settings->DefaultItemContainerClass.Get())
+	if (!Settings->ItemContainerClass.Get())
 	{
-		UAssetManager::Get().LoadAssetList({Settings->DefaultItemContainerClass.ToSoftObjectPath()})->WaitUntilComplete();
+		UAssetManager::Get().LoadAssetList({Settings->ItemContainerClass.ToSoftObjectPath()})->WaitUntilComplete();
 	}
 
-	return Settings->DefaultItemContainerClass.Get();
+	return Settings->ItemContainerClass.Get();
+}
+
+TSubclassOf<UItemInstanceViewModel> UInventorySettings::GetItemInstanceViewModelClass()
+{
+	const UInventorySettings* Settings = GetDefault<UInventorySettings>();
+
+	if (!Settings->ItemInstanceViewModelClass)
+	{
+		UE_LOG(LogInventorySystem, Error, TEXT("UInventorySettings.ItemInstanceViewModelClass is not valid. "
+			"Set a value in the project settings."));
+	}
+
+	if (!Settings->ItemInstanceViewModelClass.Get())
+	{
+		UAssetManager::Get().LoadAssetList({Settings->ItemInstanceViewModelClass.ToSoftObjectPath()})->WaitUntilComplete();
+	}
+
+	return Settings->ItemInstanceViewModelClass.Get();
 }
 
 

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ItemInstanceViewModelSortingAlgorithm.h"
+#include "ItemInstanceViewModelSorting.h"
 #include "ItemInstanceViewModelSorting_Quantity.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class INVENTORYSYSTEM_API UItemInstanceViewModelSorting_Quantity : public UItemInstanceViewModelSortingAlgorithm
+class INVENTORYSYSTEM_API UItemInstanceViewModelSorting_Quantity : public UItemInstanceViewModelSorting
 {
 	GENERATED_BODY()
 	
@@ -19,5 +19,5 @@ public:
 	bool bDescendingOrder = true;
 	
 protected:
-	virtual bool CalculateResult_Implementation(const UItemInstanceViewModel* A, const UItemInstanceViewModel* B) const override;
+	virtual bool CalculateResult_Implementation(const UObject* Context, const UItemInstanceViewModel* A, const UItemInstanceViewModel* B) const override;
 };

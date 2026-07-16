@@ -6,7 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "ItemInstanceViewModelSortingPreset.generated.h"
 
-class UItemInstanceViewModelSortingAlgorithm;
+class UItemInstanceViewModelSorting;
 
 /**
  * An asset that contains a collection of Sorting functions that are processed top to bottom.
@@ -23,5 +23,5 @@ public:
 	
 	// The sorting will occur from top to bottom in the stack.
 	UPROPERTY(EditAnywhere)
-	TArray<TObjectPtr<UItemInstanceViewModelSortingAlgorithm>> SortingAlgorithms;
+	TArray<TObjectPtr<UItemInstanceViewModelSorting>> SortingAlgorithms;
 };
