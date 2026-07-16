@@ -303,7 +303,6 @@ public:
 	bool HasAuthority() const {return bOwnerIsNetAuthority;}
 
 protected:
-
 	/**
 	 * Is called from the InventoryManagerComponent upon creating this ItemContainer.
 	 * This serves as a 'BeginPlay' type function.
@@ -312,7 +311,7 @@ protected:
 
 	/**
 	 * Called from the ItemManager when trying to add an item to the ItemContainer. Should be overriden by subclasses to
-	 * determine custom logic. By default, it will add the item without any changes.
+	 * determine custom logic. Add items respecting stack and quantity limits.
 	 * @param Item The item to evaluate.
 	 * @param AddItemPlan The plan that was passed in to be updated with entries.
 	 * @return The collection of items added or modified in the Container.
@@ -347,7 +346,7 @@ private:
 	FGameplayTag ItemContainerTag;
 
 	/** The owner of this ItemContainer. */
-	UPROPERTY(Transient)
+	UPROPERTY()
 	TObjectPtr<UInventoryManagerComponent> InventoryManagerComponent;
 	UPROPERTY()
 	bool bOwnerIsNetAuthority = false;

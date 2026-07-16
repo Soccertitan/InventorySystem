@@ -11,6 +11,7 @@
 #include "UI/ViewModel/Sorting/ItemInstanceViewModelSorting.h"
 #include "UI/ViewModel/Sorting/ItemInstanceViewModelSortingPreset.h"
 
+
 UItemContainerViewModel::UItemContainerViewModel()
 {
 }
@@ -97,7 +98,7 @@ bool UItemContainerViewModel::SortItemInstances(const UObject* Context, const UI
 {
 	if (SortingPreset && ItemInstanceViewModels.Num() > 0)
 	{
-		Algo::Sort(ItemInstanceViewModels, [Context, SortingPreset](const UItemInstanceViewModel* A, const UItemInstanceViewModel* B)
+		Algo::StableSort(ItemInstanceViewModels, [Context, SortingPreset](const UItemInstanceViewModel* A, const UItemInstanceViewModel* B)
 		{
 			for (const TObjectPtr<UItemInstanceViewModelSorting>& SortAlgorithm : SortingPreset->SortingAlgorithms)
 			{
