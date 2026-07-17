@@ -29,13 +29,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory System", meta = (DefaultToSelf = "Actor"))
 	static UInventoryManagerComponent* GetInventoryManagerComponent(const AActor* Actor);
 
-	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Item", DisplayName = "IsValid")
 	static bool IsItemInstanceValid(UPARAM(ref) const FItemInstance& ItemInstance);
 	
 	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
 	static FItemInstanceHandle GetHandle(const FItemInstance& ItemInstance);
 	
-	UFUNCTION(BlueprintPure, Category = "Inventory System|Item")
+	UFUNCTION(BlueprintPure, Category = "Inventory System|Item", DisplayName = "IsValid")
 	static bool IsItemInstanceHandleValid(const FItemInstanceHandle& Handle);
 
 	/**
