@@ -22,20 +22,20 @@ bool UItemInstanceViewModelFilter_ItemDefinition::ShouldBeginFilter(const UObjec
 	return true;
 }
 
-bool UItemInstanceViewModelFilter_ItemDefinition::DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
+bool UItemInstanceViewModelFilter_ItemDefinition::ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
 {
-	if (!Super::DoesItemInstanceViewModelPassFilter(Context, ItemInstanceViewModel))
+	if (Super::ShouldFilterItemInstance(Context, ItemInstanceViewModel))
 	{
-		return false;
+		return true;
 	}
 
 	for (const TSoftObjectPtr<UItemDefinition> ItemDefinition : ItemDefinitions)
 	{
 		if (ItemInstanceViewModel->GetItem().Get<FItem>().GetItemDefinition() == ItemDefinition)
 		{
-			return true;
+			return false;
 		}
 	}
 
-	return false;
+	return true;
 }

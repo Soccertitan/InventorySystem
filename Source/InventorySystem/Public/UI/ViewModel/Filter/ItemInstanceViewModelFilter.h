@@ -46,22 +46,22 @@ protected:
 	bool K2_ShouldBeginFilter(const UObject* Context, TArray<UItemInstanceViewModel*>& ItemInstanceViewModels) const;
 
 	/**
-	 * Checks the filter criteria and returns a boolean if it passed the filter criteria. The ItemInstanceViewModel and 
+	 * Returns true if th e ViewModel should be removed. The ItemInstanceViewModel and 
 	 * Item are guaranteed to be valid.
 	 * @param Context A context that can contain any information the Filter requires to do its job.
 	 * @param ItemInstanceViewModel The ItemViewModel to evaluate.
 	 * @return True, if the ViewModel passes the filter criteria.
 	 */
-	virtual bool DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const;
+	virtual bool ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const;
 
 	/**
-	 * Checks the filter criteria and returns a boolean if it passed the filter criteria. The ItemInstanceViewModel and 
+	 * Returns true if the ViewModel should be removed. The ItemInstanceViewModel and 
 	 * Item are guaranteed to be valid.
 	 * @param Context A context that can contain any information the Filter requires to do its job.
 	 * @param ItemInstanceViewModel The ItemViewModel to evaluate.
 	 */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Viewmodel|Filter", meta = (DisplayName = "DoesItemInstanceViewModelPassFilter"))
-	bool K2_DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const;
+	UFUNCTION(BlueprintImplementableEvent, Category = "Viewmodel|Filter", meta = (DisplayName = "ShouldFilterItemInstance"))
+	bool K2_ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const;
 
 private:
 

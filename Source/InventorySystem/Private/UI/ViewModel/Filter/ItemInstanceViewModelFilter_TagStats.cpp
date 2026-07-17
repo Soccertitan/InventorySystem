@@ -21,11 +21,11 @@ bool UItemInstanceViewModelFilter_TagStats::ShouldBeginFilter(const UObject* Con
 	return true;
 }
 
-bool UItemInstanceViewModelFilter_TagStats::DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
+bool UItemInstanceViewModelFilter_TagStats::ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
 {
-	if (!Super::DoesItemInstanceViewModelPassFilter(Context, ItemInstanceViewModel))
+	if (Super::ShouldFilterItemInstance(Context, ItemInstanceViewModel))
 	{
-		return false;
+		return true;
 	}
 
 	if (const FItem* ItemPtr = ItemInstanceViewModel->GetItem().GetPtr<FItem>())
@@ -35,11 +35,11 @@ bool UItemInstanceViewModelFilter_TagStats::DoesItemInstanceViewModelPassFilter(
 			int32 CurrentValue = ItemPtr->GameplayTagStackContainer.GetStackCount(Requirement.GetTag());
 			if (CurrentValue <= Requirement.GetCount())
 			{
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 }

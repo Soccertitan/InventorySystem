@@ -10,7 +10,7 @@
 UItemInstanceViewModelFilter::UItemInstanceViewModelFilter()
 {
 	bHasShouldBeginFilter = BlueprintNodeHelpers::HasBlueprintFunction(TEXT("K2_ShouldBeginFilter"), *this, *StaticClass());
-	bHasDoesItemInstanceViewModelPassFilter = BlueprintNodeHelpers::HasBlueprintFunction(TEXT("K2_DoesItemInstanceViewModelPassFilter"), *this, *StaticClass());
+	bHasDoesItemInstanceViewModelPassFilter = BlueprintNodeHelpers::HasBlueprintFunction(TEXT("K2_ShouldFilterItemInstance"), *this, *StaticClass());
 }
 
 void UItemInstanceViewModelFilter::FilterItemInstanceViewModels(const UObject* Context, TArray<UItemInstanceViewModel*>& ItemInstanceViewModels) const
@@ -19,7 +19,7 @@ void UItemInstanceViewModelFilter::FilterItemInstanceViewModels(const UObject* C
 	{
 		for (int32 idx = ItemInstanceViewModels.Num() - 1; idx >= 0; idx--)
 		{
-			if (ItemInstanceViewModels[idx] && DoesItemInstanceViewModelPassFilter(Context, ItemInstanceViewModels[idx]))
+			if (ItemInstanceViewModels[idx] && !ShouldFilterItemInstance(Context, ItemInstanceViewModels[idx]))
 			{
 				continue;
 			}
@@ -37,19 +37,14 @@ bool UItemInstanceViewModelFilter::ShouldBeginFilter(const UObject* Context, TAr
 	return true;
 }
 
-bool UItemInstanceViewModelFilter::DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
+bool UItemInstanceViewModelFilter::ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const
 {
-	if (!ItemInstanceViewModel->GetItem().IsValid())
-	{
-		return false;
-	}
-
 	if (bHasDoesItemInstanceViewModelPassFilter)
 	{
-		return K2_DoesItemInstanceViewModelPassFilter(Context, ItemInstanceViewModel);
+		return K2_ShouldFilterItemInstance(Context, ItemInstanceViewModel);
 	}
 
-	return true;
+	return false;
 }
 
 

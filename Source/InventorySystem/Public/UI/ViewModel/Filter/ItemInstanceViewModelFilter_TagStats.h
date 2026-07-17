@@ -20,7 +20,6 @@ public:
 	FGameplayTagStackContainer RequiredTagStats;
 
 protected:
-
 	virtual bool ShouldBeginFilter(const UObject* Context, TArray<UItemInstanceViewModel*>& ItemInstanceViewModels) const override;
-	virtual bool DoesItemInstanceViewModelPassFilter(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const override;
+	virtual bool ShouldFilterItemInstance(const UObject* Context, UItemInstanceViewModel* ItemInstanceViewModel) const override;
 };
